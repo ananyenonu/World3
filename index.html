@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World3 — Simulating the Future of Humanity in a Finite World</title>
+<style>
+  :root{
+    --paper:#F6F1E6;
+    --paper-2:#FBF7EE;
+    --ink:#14201C;
+    --ink-2:#24332D;
+    --muted:#66736C;
+    --line:#D9D0BE;
+    --line-2:#C7BCA5;
+    --teal:#0E6B5C;
+    --teal-2:#3E8F80;
+    --teal-soft:#DDEBE4;
+    --amber:#BF5B2A;
+    --amber-soft:#F3DFCE;
+    --blue:#2B4C7E;
+    --blue-soft:#DDE4EF;
+    --red:#A33A2A;
+    --olive:#78863C;
+    --serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif;
+    --sans:"Segoe UI",Inter,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --mono:"Cascadia Mono",Consolas,"SF Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:#151d1a;overflow:hidden}
+  body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased}
+  button,input{font-family:inherit}
+  button{touch-action:manipulation}
+  input[type="range"]{touch-action:pan-y}
+  #viewport{position:fixed;inset:0;width:100%;height:100%;overflow:hidden;
+    display:block;background:radial-gradient(1200px 700px at 50% 40%,#2a3732 0%,#131a17 70%,#0d1210 100%)}
+  #stage{width:1280px;height:720px;position:absolute;left:50%;top:50%;
+    margin:0;background:var(--paper);overflow:hidden;
+    box-shadow:0 40px 120px rgba(0,0,0,.55),0 2px 0 rgba(255,255,255,.08) inset;
+    transform:translate(-50%,-50%) scale(var(--stage-scale,1));
+    transform-origin:center center;flex:none}
+  #stage:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      radial-gradient(900px 500px at 8% -5%,rgba(14,107,92,.07),transparent 60%),
+      radial-gradient(700px 500px at 100% 105%,rgba(191,91,42,.06),transparent 55%),
+      repeating-linear-gradient(0deg,rgba(20,32,28,.018) 0 1px,transparent 1px 4px);}
+  .slide{position:absolute;inset:0;z-index:1;padding:40px 56px 34px;display:flex;flex-direction:column;
+    opacity:0;transform:translateY(12px);transition:opacity .42s ease,transform .42s ease;pointer-events:none}
+  .slide.active{opacity:1;transform:none;pointer-events:auto}
+  .slide.prev{transform:translateY(-10px)}
+  .s-head{display:flex;align-items:center;gap:14px;margin:0 0 6px;flex:none}
+  .kicker{font:600 9.5px/1 var(--sans);letter-spacing:.19em;text-transform:uppercase;color:var(--teal);white-space:nowrap}
+  .s-head .rule{flex:1;height:1px;background:var(--line)}
+  .s-head .tag{font:500 9px/1 var(--mono);letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+  .s-title{font-family:var(--serif);font-weight:600;font-size:38px;line-height:1.08;letter-spacing:-.012em;margin:0 0 12px;max-width:1080px;flex:none}
+  .s-title em{font-style:italic;color:var(--amber)}
+  .s-title .thin{font-weight:400;color:var(--ink-2)}
+  .s-body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+  .s-foot{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;font:400 8.8px/1.35 var(--sans);
+    color:var(--muted);border-top:1px solid var(--line);padding-top:7px;margin-top:7px;flex:none;letter-spacing:.015em}
+  .s-foot .src{max-width:960px}
+  .s-num{font:600 10px/1 var(--mono);color:var(--teal);letter-spacing:.05em}
+  p{margin:0}
+  .lead{font-size:15.5px;line-height:1.52;color:var(--ink-2);max-width:720px}
+  .body-t{font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+  .small{font-size:10.5px;line-height:1.45;color:var(--muted)}
+  .tiny{font-size:9px;line-height:1.4;color:var(--muted)}
+  .mono{font-family:var(--mono)}
+  .accent{color:var(--teal)}
+  .amber{color:var(--amber)}
+  .cols{display:grid;gap:26px;align-items:center;min-height:0}
+  .c-55{grid-template-columns:55fr 45fr}
+  .c-50{grid-template-columns:1fr 1fr}
+  .c-45{grid-template-columns:45fr 55fr}
+  .c-60{grid-template-columns:60fr 40fr}
+  .c-38{grid-template-columns:38fr 62fr}
+  .stack{display:flex;flex-direction:column;gap:12px;min-height:0}
+  .card{background:rgba(255,253,247,.6);border:1px solid var(--line);border-radius:2px;padding:13px 15px;position:relative}
+  .card.tint{background:rgba(221,235,228,.42);border-color:#C9DCD3}
+  .card.warm{background:rgba(243,223,206,.42);border-color:#E4CBBA}
+  .card.dark{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+  .card h4{font:600 11px/1.25 var(--sans);letter-spacing:.02em;margin:0 0 5px;color:var(--teal);text-transform:uppercase}
+  .card.warm h4{color:var(--amber)}
+  .card.dark h4{color:#9FD3C5}
+  .stat-row{display:flex;gap:10px}
+  .stat{flex:1;border-top:2px solid var(--teal);padding-top:7px}
+  .stat .n{font-family:var(--serif);font-size:28px;line-height:1;letter-spacing:-.02em}
+  .stat .l{font-size:8.5px;line-height:1.3;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:4px}
+  .tagline{display:inline-flex;align-items:center;gap:6px;font:600 8.5px/1 var(--sans);letter-spacing:.12em;
+    text-transform:uppercase;color:var(--teal);border:1px solid #BFD6CC;background:rgba(221,235,228,.45);
+    padding:5px 8px;border-radius:999px}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+  .btn{border:1px solid var(--line-2);background:rgba(255,253,247,.75);color:var(--ink);
+    padding:5px 9px;font:600 8.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+    border-radius:2px;cursor:pointer;transition:.15s;white-space:nowrap}
+  .btn:hover{border-color:var(--teal);color:var(--teal)}
+  .btn.active{background:var(--teal);border-color:var(--teal);color:#fff}
+  .btn.ghost{background:transparent}
+  .hint{display:flex;align-items:center;gap:6px;font-size:8.5px;color:var(--muted);letter-spacing:.04em}
+  .hint svg{flex:none}
+  .chart{display:block;width:100%;overflow:visible}
+  .chart text{font-family:var(--sans);fill:var(--muted)}
+  .gridline{stroke:rgba(20,32,28,.075);stroke-width:1}
+  .axisline{stroke:var(--line-2);stroke-width:1}
+  .ticktext{font-size:8.5px;fill:var(--muted)}
+  .axistitle{font-size:8.5px;fill:var(--muted);letter-spacing:.02em}
+  .series{fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+  .series.thin{stroke-width:1.4}
+  .series.dash{stroke-dasharray:4 3}
+  .qlabel{font-size:8.5px;fill:var(--ink-2);font-weight:600}
+  #tip{position:fixed;z-index:200;pointer-events:none;opacity:0;transition:opacity .12s;
+    background:rgba(20,32,28,.96);color:#F7F2E7;padding:7px 9px;border-radius:2px;
+    font:400 10.5px/1.4 var(--sans);max-width:240px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+  #tip b{color:#A9D8CA;font-weight:600}
+  .ui{position:absolute;right:20px;bottom:16px;z-index:40;display:flex;align-items:center;gap:6px}
+  .ui button{width:26px;height:26px;border:1px solid rgba(246,241,230,.35);background:rgba(20,32,28,.55);
+    color:#F6F1E6;border-radius:50%;cursor:pointer;display:grid;place-items:center;font-size:12px;transition:.15s}
+  .ui button:hover{background:var(--teal);border-color:var(--teal)}
+  .ui .count{font:500 9px/1 var(--mono);color:rgba(246,241,230,.75);margin-right:3px;letter-spacing:.08em}
+  #progress{position:absolute;left:0;right:0;bottom:0;height:3px;z-index:45;display:flex;gap:2px;padding:0 2px;background:transparent}
+  #progress button{flex:1;height:3px;border:0;padding:0;background:rgba(20,32,28,.12);cursor:pointer;transition:.2s}
+  #progress button.done{background:rgba(14,107,92,.35)}
+  #progress button.on{background:var(--amber)}
+  #help{position:absolute;left:20px;bottom:14px;z-index:40;font:500 8px/1.5 var(--mono);color:rgba(20,32,28,.5);
+    letter-spacing:.03em;pointer-events:none}
+  #notes{position:absolute;left:26px;right:26px;bottom:20px;z-index:60;background:#FFFCF3;border:1px solid var(--line-2);
+    border-left:4px solid var(--amber);box-shadow:0 22px 50px rgba(20,32,28,.28);padding:14px 18px 15px;
+    transform:translateY(calc(100% + 40px));transition:transform .3s ease;max-height:260px;overflow:auto}
+  #notes.open{transform:none}
+  #notes .nk{font:600 8px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+  #notes .nt{font-family:var(--serif);font-size:14px;line-height:1.5;color:var(--ink-2)}
+  #notes .nt b{color:var(--teal)}
+  #overview{position:absolute;inset:0;z-index:80;background:rgba(20,32,28,.94);padding:34px 40px;display:none;
+    grid-template-columns:repeat(4,1fr);gap:12px;align-content:center}
+  #overview.open{display:grid}
+  #overview button{text-align:left;background:rgba(246,241,230,.06);border:1px solid rgba(246,241,230,.16);
+    color:#F6F1E6;padding:10px;cursor:pointer;font:400 10px/1.3 var(--sans);min-height:58px;border-radius:2px}
+  #overview button:hover{border-color:var(--amber);background:rgba(246,241,230,.1)}
+  #overview button b{display:block;font:600 8px/1 var(--mono);color:#E4A17D;margin-bottom:5px;letter-spacing:.1em}
+  #overview .ovh{grid-column:1/-1;color:#F6F1E6;font-family:var(--serif);font-size:22px;margin-bottom:6px}
+  #overview .ovs{grid-column:1/-1;color:rgba(246,241,230,.55);font-size:10px;margin-top:6px}
+  /* ---------- title ---------- */
+  .title-slide{background:#101A17;color:#F4EFE3;padding:50px 58px 40px;overflow:hidden}
+  .title-slide:before{display:none}
+  .title-slide .glow{position:absolute;width:720px;height:720px;right:-220px;top:-260px;border-radius:50%;
+    background:radial-gradient(circle,rgba(62,143,128,.22),transparent 62%);pointer-events:none}
+  .t-kick{font:600 9.5px/1 var(--sans);letter-spacing:.24em;text-transform:uppercase;color:#D99A74}
+  .title-slide h1{font-family:var(--serif);font-weight:500;font-size:104px;line-height:.92;letter-spacing:-.035em;margin:16px 0 2px}
+  .title-slide h1 span{color:#8FC7B8}
+  .t-sub{font-family:var(--serif);font-size:25px;line-height:1.2;color:#E9E1D0;max-width:560px;margin:12px 0 0}
+  .t-lead{font-size:13px;line-height:1.6;color:rgba(244,239,227,.68);max-width:475px;margin:18px 0 0}
+  .t-meta{position:absolute;left:58px;bottom:40px;display:flex;gap:26px;align-items:flex-end;z-index:3}
+  .t-meta .m{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:rgba(244,239,227,.5);line-height:1.6}
+  .t-meta .m b{display:block;color:#F4EFE3;font-size:10px;letter-spacing:.04em;text-transform:none;font-weight:500}
+  .cover-chart{position:absolute;right:36px;bottom:34px;width:640px;height:360px;opacity:.98}
+  .cover-chart text{fill:rgba(244,239,227,.55);font-family:var(--sans)}
+  .cover-chart .cv-grid{stroke:rgba(244,239,227,.09)}
+  .cover-chart .cv-axis{stroke:rgba(244,239,227,.22)}
+  .cover-chart .cv-lab{font-size:9px;letter-spacing:.05em}
+  .cover-chart .cv-big{font-size:10px;font-weight:600;letter-spacing:.02em}
+  .cover-chart .cv-note{font-size:8px;fill:rgba(244,239,227,.42);letter-spacing:.03em}
+  /* ---------- specific ---------- */
+  .quote{font-family:var(--serif);font-size:19px;line-height:1.42;color:var(--ink);border-left:3px solid var(--amber);padding-left:16px}
+  .quote .by{display:block;font:500 8.5px/1.4 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:9px}
+  .timeline{position:relative;height:250px}
+  .loop-node{cursor:pointer}
+  .loop-node .halo{opacity:0;transition:.15s}
+  .loop-node:hover .halo,.loop-node.on .halo{opacity:1}
+  .sector{cursor:pointer}
+  .sector .shalo{opacity:0;transition:.2s}
+  .sector:hover .shalo,.sector.on .shalo{opacity:1}
+  .sector .slabel{font-weight:600;font-size:11px;fill:var(--ink)}
+  .sector.on .slabel{fill:var(--teal)}
+  .legend{display:flex;flex-wrap:wrap;gap:9px 14px;align-items:center}
+  .legend .li{display:flex;align-items:center;gap:5px;font-size:8.5px;color:var(--muted);letter-spacing:.02em}
+  .legend .sw{width:14px;height:2.5px;border-radius:2px;display:inline-block}
+  .kbd{font:600 8px/1 var(--mono);border:1px solid var(--line-2);background:#fff9;padding:2px 4px;border-radius:2px;color:var(--muted)}
+  .quotebox{background:var(--ink);color:#F3EEE2;padding:15px 17px;border-radius:2px}
+  .quotebox p{font-family:var(--serif);font-size:15px;line-height:1.45}
+  .quotebox .by{font:500 8px/1.4 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#9BC9BB;margin-top:8px}
+  .pillrow{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{font:600 8px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;padding:5px 7px;border:1px solid var(--line);
+    border-radius:999px;color:var(--muted);background:rgba(255,255,255,.4)}
+  .pill.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+  .flow{cursor:pointer}
+  .flow .fnode{transition:.15s}
+  .flow .fnode:hover rect,.flow .fnode.on rect{stroke:var(--amber);stroke-width:2}
+  .mini-num{font-family:var(--serif);font-size:20px;line-height:1;color:var(--teal)}
+  .kpi{display:flex;gap:14px;align-items:baseline}
+  .kpi .big{font-family:var(--serif);font-size:32px;line-height:1;letter-spacing:-.02em}
+  .kpi .u{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .note-box{font-size:9px;line-height:1.45;color:var(--muted);border-top:1px dashed var(--line-2);padding-top:7px}
+  .refs{columns:2;column-gap:32px;font-size:11.4px;line-height:1.48;color:var(--ink-2)}
+  .refs p{break-inside:avoid;margin:0 0 9.5px;padding-left:16px;text-indent:-16px}
+  .refs b{color:var(--teal)}
+  .refs .doi{color:var(--muted);font-family:var(--mono);font-size:8.5px}
+  .scrollable{overflow:auto}
+  .scrollable::-webkit-scrollbar{width:4px}
+  .scrollable::-webkit-scrollbar-thumb{background:var(--line-2)}
+  @media (prefers-reduced-motion: reduce){.slide,#notes{transition:none}}
+</style>
+</head>
+<body>
+<div id="viewport">
+  <div id="stage">
+
+    <!-- ============ 1 TITLE ============ -->
+    <section class="slide title-slide active" data-bare="1" data-title="Title">
+      <div class="glow"></div>
+      <div style="position:relative;z-index:2">
+        <div class="t-kick">Master's seminar &nbsp;·&nbsp; System dynamics &amp; global modelling</div>
+        <h1>World<span>3</span></h1>
+        <div class="t-sub">Simulating the Future of Humanity<br>in a Finite World</div>
+        <p class="t-lead">A 1972 computer model asked a question we still have not answered: what happens when exponential growth meets a planet with limits?</p>
+      </div>
+      <div class="cover-chart" id="coverChart"></div>
+      <div class="t-meta">
+        <div class="m">Built from<b>7 papers + the LtG books</b></div>
+        <div class="m">Format<b>17 slides · explanatory</b></div>
+        <div class="m">Controls<b>← → navigate · N notes · O overview</b></div>
+      </div>
+      <div style="position:absolute;right:34px;top:40px;z-index:3;font:500 9px/1.7 var(--mono);color:rgba(244,239,227,.4);text-align:right">
+        <div>1900 — 2100</div><div>5 sectors · 29 states</div>
+      </div>
+    </section>
+
+    <!-- ============ 2 FRAMING ============ -->
+    <section class="slide" data-kicker="01 · Framing" data-source="Meadows et al., The Limits to Growth (1972); Dynamics of Growth in a Finite World (1974); The 30-Year Update (2005)" data-title="A model, not a prophecy">
+      <h2 class="s-title">A model, not a <em>prophecy</em></h2>
+      <div class="s-body cols c-55">
+        <div class="stack">
+          <p class="lead">In 1972, a team at MIT built <b>World3</b> for the Club of Rome. It was not a forecast machine. It was a laboratory for asking: <i>if growth continues, what does the system do next?</i></p>
+          <p class="body-t">The model linked five sectors — population, capital, agriculture, resources and pollution — and ran them from 1900 to 2100. Its output was a family of scenarios, not a single future.</p>
+          <div class="stat-row" style="margin-top:4px">
+            <div class="stat"><div class="n">5</div><div class="l">coupled sectors</div></div>
+            <div class="stat"><div class="n">29</div><div class="l">state variables (1972)</div></div>
+            <div class="stat"><div class="n">12</div><div class="l">scenarios in the first book</div></div>
+            <div class="stat"><div class="n">200</div><div class="l">years simulated</div></div>
+          </div>
+          <div class="quotebox">
+            <p>“These graphs are not exact predictions… They are indications of the system's behavioural tendencies only.”</p>
+            <div class="by">Meadows, Meadows, Randers &amp; Behrens, 1972</div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card" style="padding:16px 17px 10px">
+            <h4 style="margin-bottom:2px">The argument in one line</h4>
+            <p style="font-family:var(--serif);font-size:17px;line-height:1.35;margin:3px 0 10px">Exponential growth is easy. Living with its consequences is not.</p>
+            <div class="timeline" id="pubTimeline"></div>
+          </div>
+          <div class="pillrow" style="justify-content:space-between;margin-top:2px">
+            <span class="pill on">Build</span><span class="pill on">Run</span><span class="pill on">Test</span><span class="pill on">Rethink</span>
+          </div>
+          <p class="tiny" style="margin-top:-2px">The deck follows that arc: how the model is built, what it says, how it has been tested against 50 years of data, and what its critics and successors teach us.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3 SYSTEM DYNAMICS ============ -->
+    <section class="slide" data-kicker="02 · The toolkit" data-source="Forrester (1971); Meadows et al. (1974); Turner (2008), on feedback, stocks and delays in World3" data-title="Systems that grow, and systems that push back">
+      <h2 class="s-title">Systems that grow, and systems that <em>push back</em></h2>
+      <div class="s-body cols c-45">
+        <div class="stack">
+          <p class="lead">System dynamics models the world as <b>stocks</b>, <b>flows</b> and <b>feedback loops</b>. A stock is a bathtub; a flow is the tap. Feedback turns the tap based on the water level — but only after a delay.</p>
+          <div class="card tint">
+            <h4>Reinforcing loop (R)</h4>
+            <p class="small">More people → more workers and demand → more industrial output → more food, health and services → more people. Growth feeds itself.</p>
+          </div>
+          <div class="card warm">
+            <h4>Balancing loops (B)</h4>
+            <p class="small">More output → more resource extraction and pollution → lower fertility, food and health → slower growth. Limits push back.</p>
+          </div>
+          <p class="note-box">The behaviour of the whole depends on which loop dominates — and on how long the signals take to travel.</p>
+        </div>
+        <div class="stack" style="gap:8px">
+          <div class="card" style="padding:8px 10px 6px;background:rgba(255,253,247,.4)">
+            <div id="loopChart"></div>
+          </div>
+          <div style="display:flex;gap:7px;align-items:center;justify-content:space-between">
+            <div class="pillrow" id="loopBtns">
+              <button class="btn active" data-loop="R">R · growth</button>
+              <button class="btn" data-loop="B1">B1 · resources</button>
+              <button class="btn" data-loop="B2">B2 · pollution</button>
+              <button class="btn" data-loop="all">All loops</button>
+            </div>
+            <span class="hint">click a loop</span>
+          </div>
+          <p class="tiny" id="loopCaption">Population and industrial output reinforce each other. The dashed link is the delay: effects arrive after the damage is done.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4 ARCHITECTURE ============ -->
+    <section class="slide" data-kicker="03 · Architecture" data-source="Meadows et al. (1974); Nebel et al. (2024), §1.1; Vermeulen & de Jongh (1976), model dimensions" data-title="Five sectors, one coupled machine">
+      <h2 class="s-title">Five sectors, <em>one coupled machine</em></h2>
+      <div class="s-body cols c-60" style="align-items:stretch">
+        <div class="stack" style="justify-content:center">
+          <p class="lead" style="max-width:590px">World3 is highly aggregated: one world population, one industrial capital stock, one pollution stock. That is its weakness and its power — it forces us to see the coupling.</p>
+          <div class="card" style="padding:8px 10px 4px;background:rgba(255,253,247,.4);flex:1;display:flex;align-items:center">
+            <div id="sectorMap" style="width:100%"></div>
+          </div>
+          <div class="legend" style="justify-content:center">
+            <span class="li"><span class="sw" style="background:var(--red)"></span>people</span>
+            <span class="li"><span class="sw" style="background:var(--blue)"></span>capital</span>
+            <span class="li"><span class="sw" style="background:var(--olive)"></span>food &amp; land</span>
+            <span class="li"><span class="sw" style="background:#6B5B8E"></span>resources</span>
+            <span class="li"><span class="sw" style="background:#6C7370"></span>pollution</span>
+          </div>
+        </div>
+        <div class="stack" style="justify-content:center">
+          <div class="card tint" id="sectorDetail" style="min-height:238px">
+            <h4 id="sdName">Population</h4>
+            <p class="body-t" id="sdText">Four age cohorts. Births and deaths respond — with delays — to food, health services, education and environmental quality. A large cohort today becomes a large working-age cohort 20 years later.</p>
+            <div id="sdFacts" style="display:flex;gap:8px;margin-top:10px"></div>
+          </div>
+          <p class="tiny">Click a sector in the diagram. Every sector is both a cause and a victim of what the others do.</p>
+          <div class="note-box" style="border-top-style:solid">
+            <b class="accent">1972 formulation:</b> 29 state variables, 38 parameters, 100+ equations, yearly time steps. <b class="accent">2005 update:</b> World3-03 adds an adaptive technology sector, the ecological footprint and a human welfare index.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5 OVERSHOOT LAB ============ -->
+    <section class="slide" data-kicker="04 · Mechanism" data-source="Concept after Meadows et al. (1972, 2004); Turner (2008) on delays and erodible limits. Simulation is an illustrative toy model, not a World3 run." data-title="Overshoot is what delay looks like">
+      <h2 class="s-title">Overshoot is what <em>delay</em> looks like</h2>
+      <div class="s-body cols c-45">
+        <div class="stack">
+          <p class="lead">Three ingredients are enough: <b>growth</b>, a <b>limit</b>, and a <b>lag</b> between the signal and the response.</p>
+          <div class="card">
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <div class="mini-num">1</div><p class="small"><b>Growth</b> is exponential while resources look abundant.</p>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;margin-top:8px">
+              <div class="mini-num">2</div><p class="small"><b>The limit</b> declines as the system overshoots it: soil erodes, stocks deplete, sinks fill.</p>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;margin-top:8px">
+              <div class="mini-num">3</div><p class="small"><b>The delay</b> means the response arrives after the limit has already been crossed.</p>
+            </div>
+          </div>
+          <p class="body-t">Move the response lag. A short lag settles near the limit; a long lag produces a peak, an eroded limit, and a decline.</p>
+          <p class="note-box" style="margin-top:auto">Toy model, calibrated by hand to isolate the mechanism. It is not a World3 output and makes no empirical claim.</p>
+        </div>
+        <div class="stack" style="gap:8px">
+          <div id="overshootChart" style="flex:1;min-height:250px"></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="tiny" style="white-space:nowrap;width:74px">response lag</span>
+            <input id="lagSlider" type="range" min="0" max="60" value="20" step="1" style="flex:1;accent-color:var(--teal)">
+            <span class="mono" id="lagVal" style="font-size:11px;width:38px;text-align:right">20 y</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div class="pillrow">
+              <button class="btn" data-lag="2">fast response</button>
+              <button class="btn" data-lag="30">slow response</button>
+            </div>
+            <div class="mono" id="overRead" style="font-size:8.5px;color:var(--muted);text-align:right;line-height:1.5"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 6 STANDARD RUN ============ -->
+    <section class="slide" data-kicker="05 · The standard run" data-source="Meadows et al. (1972; 2004), business-as-usual scenario. Curves are stylised reconstructions of the published behaviour, not digitised data." data-title="The standard run: growth, peak, decline">
+      <h2 class="s-title">The standard run: growth, peak, <em>decline</em></h2>
+      <div class="s-body cols c-38">
+        <div class="stack">
+          <p class="lead">“Business as usual” holds the relationships of 1900–1970 constant. Output keeps growing; resource extraction accelerates; capital is diverted to ever more expensive extraction; food and services tighten; death rates rise.</p>
+          <div class="card warm">
+            <h4>The causal chain</h4>
+            <p class="small">Resource depletion → higher extraction cost → less capital for agriculture and services → falling food and health → rising mortality → population decline.</p>
+          </div>
+          <div style="display:flex;gap:7px;align-items:center">
+            <button class="btn" id="playRun" style="min-width:74px">▶ play 1900–2100</button>
+            <span class="hint" id="runYear" style="font-family:var(--mono);font-size:9px">year 2025</span>
+          </div>
+          <input id="runSlider" type="range" min="1900" max="2100" value="2025" step="1" style="width:100%;accent-color:var(--amber)">
+          <p class="note-box">Each panel has its own scale. Read the <b>shape and timing</b>, not the relative heights — a point the LtG authors themselves stressed.</p>
+        </div>
+        <div class="stack" style="gap:2px">
+          <div class="legend" style="justify-content:flex-end;margin-bottom:2px">
+            <span class="li"><span class="sw" style="background:var(--teal)"></span>model trajectory</span>
+            <span class="li"><span class="sw" style="background:var(--amber)"></span>year cursor</span>
+          </div>
+          <div id="multiples" style="flex:1"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 7 SCENARIOS ============ -->
+    <section class="slide" data-kicker="06 · Scenario space" data-source="Meadows et al. (2004), scenarios 1, 2, 6 and 9; descriptions after Herrington (2021), Table 1" data-title="Four futures, four assumptions">
+      <h2 class="s-title">Four futures, <em>four assumptions</em></h2>
+      <div class="s-body cols c-45">
+        <div class="stack">
+          <div class="pillrow" id="scenarioBtns" style="margin-bottom:2px">
+            <button class="btn active" data-sc="BAU">BAU</button>
+            <button class="btn" data-sc="BAU2">BAU2</button>
+            <button class="btn" data-sc="CT">CT</button>
+            <button class="btn" data-sc="SW">SW</button>
+          </div>
+          <div class="card" id="scCard" style="min-height:115px">
+            <h4 id="scName">Business as usual</h4>
+            <p class="small" id="scDesc">Historic relationships continue. Collapse is driven by non-renewable resource depletion.</p>
+            <div id="scOutcome" style="margin-top:7px;font-size:9px;letter-spacing:.03em"></div>
+          </div>
+          <div id="scChart" style="flex:1;min-height:210px"></div>
+          <div class="legend">
+            <span class="li"><span class="sw" style="background:var(--red)"></span>population</span>
+            <span class="li"><span class="sw" style="background:var(--blue)"></span>industrial output</span>
+            <span class="li"><span class="sw" style="background:#6C7370"></span>pollution</span>
+          </div>
+          <p class="tiny" style="margin-top:2px">All curves are indexed to 2000 = 100. For non-BAU scenarios, the dashed curve is the BAU reference; the solid curves show the selected scenario.</p>
+        </div>
+        <div class="stack" style="gap:7px;justify-content:center">
+          <div class="card sc-card" data-sc="BAU" style="cursor:pointer;border-left:3px solid var(--red)">
+            <h4 style="color:var(--red)">BAU · business as usual</h4>
+            <p class="small">No new assumptions. Resources deplete; growth overshoots and collapses in the mid-21st century.</p>
+          </div>
+          <div class="card sc-card" data-sc="BAU2" style="cursor:pointer;border-left:3px solid var(--amber)">
+            <h4 style="color:var(--amber)">BAU2 · twice the resources</h4>
+            <p class="small">More fossil fuel and minerals, plus recycling. Collapse is postponed — and caused by pollution instead.</p>
+          </div>
+          <div class="card sc-card" data-sc="CT" style="cursor:pointer;border-left:3px solid var(--blue)">
+            <h4 style="color:var(--blue)">CT · comprehensive technology</h4>
+            <p class="small">Aggressive pollution control, land yield and resource efficiency. Growth stalls; decline, but no full collapse.</p>
+          </div>
+          <div class="card sc-card" data-sc="SW" style="cursor:pointer;border-left:3px solid var(--teal)">
+            <h4 style="color:var(--teal)">SW · stabilised world</h4>
+            <p class="small">Technology <i>plus</i> changed values and policies: smaller families, output caps, more services. The only scenario without decline.</p>
+          </div>
+          <p class="note-box" style="margin-top:2px">Technology alone changes the <b>timing and cause</b>. Changing the goal — from growth to sufficiency — changes the <b>direction</b>.</p>
+          <div class="card tint" style="padding:10px 13px">
+            <h4>Read the dashed line</h4>
+            <p class="tiny">The dashed curve is always BAU, for comparison. A scenario that looks “better” on one variable can still be worse on another; the model is a package of assumptions, not a menu of independent fixes.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 8 VALIDATION ============ -->
+    <section class="slide" data-kicker="07 · Method" data-source="Turner (2008); Herrington (2021), §2; Nebel et al. (2024), §2.3; Pasqualino et al. (2015)" data-title="How do you test a world model?">
+      <h2 class="s-title">How do you test a <em>world model?</em></h2>
+      <div class="s-body" style="display:flex;flex-direction:column;gap:10px;justify-content:center">
+        <p class="lead" style="max-width:900px">Not by asking whether it “got 2020 right”. A world model is tested on whether its <b>structure</b> reproduces the direction, timing and turning points of observed trajectories — and whether it behaves sensibly when assumptions change.</p>
+        <div class="card" style="padding:10px 12px 6px;background:rgba(255,253,247,.55)">
+          <div id="pipeChart" style="width:100%"></div>
+        </div>
+        <div class="cols c-50" style="gap:16px;align-items:stretch">
+          <div class="card tint" id="pipeDetail" style="min-height:92px">
+            <h4 id="pdName">1 · Narrative</h4>
+            <p class="small" id="pdText">Start with a story about how the world works: more capital produces more output; more output consumes resources and emits pollution; pollution harms health and land with a delay.</p>
+          </div>
+          <div class="card" style="min-height:92px">
+            <h4>Two rulers, used together</h4>
+            <div style="display:flex;gap:16px;margin-top:2px">
+              <div style="flex:1">
+                <p class="tiny"><b class="accent">NRMSD</b> — normalised root-mean-square deviation across the whole series. One number per variable, comparable across sectors.</p>
+              </div>
+              <div style="flex:1">
+                <p class="tiny"><b class="accent">Value + rate of change</b> — does the model match the level <i>and</i> the slope at the latest observation? Tolerance is 20% on the value, 50% on the rate of change, and 20% on NRMSD.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="tiny">A good fit does not prove the model is true. A bad fit does not prove it is useless. The question is whether the <b>mechanism</b> earns its keep.</p>
+      </div>
+    </section>
+
+    <!-- ============ 9 TURNER ============ -->
+    <section class="slide" data-kicker="08 · Evidence I" data-source="Turner (2008), Global Environmental Change 18: 397–411. Differences are approximate values reported or read from the paper; bars are illustrative." data-title="Thirty years of reality">
+      <h2 class="s-title">Thirty years of reality: <em>the standard run holds</em></h2>
+      <div class="s-body cols c-50">
+        <div class="stack">
+          <p class="lead">Turner compared 1970–2000 observations with three 1972 scenarios. The data were <b>consistent with BAU</b>, and much less consistent with comprehensive technology or a stabilised world.</p>
+          <div class="card">
+            <h4>Approximate gap at 2000: model vs observed</h4>
+            <div id="turnerBars" style="margin-top:2px"></div>
+            <p class="tiny" style="margin-top:4px">Population looks close, but only because birth and death rates offset each other. Industrial output within ~15%; food ~5%; pollution ~15%; resources close to the lower bound.</p>
+          </div>
+          <div class="pillrow">
+            <span class="pill on">BAU consistent</span>
+            <span class="pill">CT overshoots observations</span>
+            <span class="pill">SW least consistent</span>
+          </div>
+        </div>
+        <div class="stack" style="gap:9px">
+          <div class="quotebox" style="background:var(--teal)">
+            <p>“Thirty years of historical data compare favorably with key features of a business-as-usual scenario.”</p>
+            <div class="by">Turner, 2008, abstract</div>
+          </div>
+          <div class="card warm">
+            <h4>Why this mattered</h4>
+            <p class="small">It rebutted the myth that LtG predicted collapse by 2000. The model's turning points lie in the 21st century; the data had only reached the <i>rising edge</i>.</p>
+          </div>
+          <div class="card">
+            <h4>The pollution warning</h4>
+            <p class="small">Turner concluded that understanding and controlling persistent pollution was the critical uncertainty — a theme that returns in every later comparison.</p>
+          </div>
+          <div class="card tint" style="padding:10px 13px">
+            <h4>What was compared</h4>
+            <p class="tiny">Six aggregate series over 1970–2000, against three 1972 scenarios. The test is at the level of trajectories, not country detail — so it can support a behaviour mode, not a local forecast.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 10 HERRINGTON ============ -->
+    <section class="slide" data-kicker="09 · Evidence II" data-source="Herrington (2021), Journal of Industrial Ecology 25(3): 614–626, Tables 2–3 and §4. Counts are from Table 3 (22 counts over 10 variables)." data-title="Fifty years of reality">
+      <h2 class="s-title">Fifty years of reality: <em>the window is closing</em></h2>
+      <div class="s-body cols c-55">
+        <div class="stack">
+          <p class="lead">Herrington repeated the comparison with World3-03, data to 2019, and two new variables: human welfare and the ecological footprint. The closest scenarios were <b>BAU2</b> and <b>CT</b> — not the original BAU.</p>
+          <div class="card" style="padding:10px 14px 8px">
+            <h4>Closest-fit count across 10 variables</h4>
+            <div id="herrChart"></div>
+          </div>
+          <p class="body-t">Both closest scenarios imply a <b>halt in welfare, food and industrial growth within about a decade</b>. Only BAU2 depicts a full collapse — driven by pollution, the climate-change equivalent.</p>
+        </div>
+        <div class="stack" style="gap:9px">
+          <div class="card tint">
+            <h4>What changed since Turner?</h4>
+            <p class="small">A revised model (World3-03), better data, two extra variables, and a different statistical treatment. The conclusion shifted from “BAU” to “BAU2 or CT” — but the direction did not: <b>not</b> the sustainable scenario.</p>
+          </div>
+          <div class="card warm">
+            <h4>The uncomfortable result</h4>
+            <p class="small">SW — the only scenario that avoids decline — had the <b>lowest</b> closest-fit count (3). Humanity has not been following the pathway that works.</p>
+          </div>
+          <div class="card dark">
+            <p style="font-family:var(--serif);font-size:15px;line-height:1.4">“The window to align with this last scenario is closing.”</p>
+            <div style="font:500 8px/1.3 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#9FD3C5;margin-top:7px">Herrington, 2021</div>
+          </div>
+          <p class="tiny">Counts: BAU 4 · BAU2 6 · CT 7 · SW 3 · inconclusive 2. A scenario is counted only when both accuracy measures fall inside the uncertainty band.</p>
+          <div class="card tint" style="padding:10px 13px">
+            <h4>What a count can and cannot say</h4>
+            <p class="tiny">The count is not a vote: variables are correlated, and a scenario can be closest on many weak indicators while missing the one that matters. That is why Herrington reports both NRMSD and the latest value / rate-of-change gap.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 11 PASQUALINO ============ -->
+    <section class="slide" data-kicker="10 · Calibration I" data-source="Pasqualino, Jones, Monasterolo & Phillips (2015), Sustainability 7: 9864–9889, Tables 5–7 and §4.3" data-title="Calibrating the present">
+      <h2 class="s-title">Calibrating the present: <em>what changed by 2012?</em></h2>
+      <div class="s-body cols c-45">
+        <div class="stack">
+          <p class="lead">Pasqualino and colleagues recalibrated World3-03 on 1995–2012 data, starting from Scenario 2. The exercise asks: what parameter values would make the model's <i>recent</i> behaviour match the world we actually measured?</p>
+          <div class="card">
+            <h4>Three signals from the calibration</h4>
+            <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px">
+              <div style="display:flex;justify-content:space-between;gap:8px"><span class="small">Land yield factor</span><span class="mono" style="font-size:10px;color:var(--teal)">1.00 → 1.63–1.67</span></div>
+              <div style="display:flex;justify-content:space-between;gap:8px"><span class="small">Arable-land erosion factor</span><span class="mono" style="font-size:10px;color:var(--teal)">0 → 0.92–0.94</span></div>
+              <div style="display:flex;justify-content:space-between;gap:8px"><span class="small">Processing loss</span><span class="mono" style="font-size:10px;color:var(--teal)">10% → 35%</span></div>
+            </div>
+            <p class="tiny" style="margin-top:8px">Interpretation: more investment in pollution abatement, higher agricultural productivity, better land management, and a more productive service sector than the 1972 assumptions.</p>
+          </div>
+          <div class="card warm">
+            <h4>Read the fine print</h4>
+            <p class="small">The model was <b>not run forward</b> beyond 2012. This is a calibration of the growth phase, not evidence that collapse was avoided. The authors say so explicitly.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card" style="padding:12px 14px 4px;background:rgba(255,253,247,.5)">
+            <div id="pasqChart"></div>
+            <div class="legend" style="justify-content:center;margin-top:2px">
+              <span class="li"><span class="sw" style="background:var(--line-2)"></span>Scenario 2</span>
+              <span class="li"><span class="sw" style="background:var(--teal)"></span>calibrated, with limits</span>
+              <span class="li"><span class="sw" style="background:var(--amber)"></span>calibrated, no limits</span>
+            </div>
+          </div>
+          <div class="card tint" style="margin-top:8px">
+            <h4>Why “with” and “without” limits?</h4>
+            <p class="small">The calibration is run twice: first with resource and pollution feedbacks switched off (to fit the growth phase), then with them restored. The difference is a measure of how much the omitted limits matter.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 12 NEBEL ============ -->
+    <section class="slide" data-kicker="11 · Calibration II" data-source="Nebel, Kling, Willamowski & Schell (2024), J. Industrial Ecology 28: 87–99; corrected values from the 2025 corrigendum (JIE 29: 1443–1444)" data-title="Recalibrating World3">
+      <h2 class="s-title">Recalibrating World3: <em>same shape, later peak</em></h2>
+      <div class="s-body cols c-45">
+        <div class="stack">
+          <p class="lead">Nebel and colleagues optimised <b>35 parameters</b> against eight empirical series using an iterative search in PyWorld3-03. The fit improved by 18% — and the model still produced overshoot and collapse.</p>
+          <div class="kpi">
+            <div><div class="big">0.332</div><div class="u">BAU NRMSD</div></div>
+            <div style="font-size:16px;color:var(--muted)">→</div>
+            <div><div class="big" style="color:var(--teal)">0.272</div><div class="u">recalibrated</div></div>
+            <div style="margin-left:auto;text-align:right"><div class="big" style="font-size:22px;color:var(--amber)">−18%</div><div class="u">error</div></div>
+          </div>
+          <div class="card tint">
+            <h4>What moved</h4>
+            <p class="small">Peaks are higher and a few years later; the pollution peak shifts about <b>50 years</b> into the future; collapse is still driven by resource depletion, not pollution.</p>
+          </div>
+          <div class="card warm">
+            <h4>A correction worth teaching</h4>
+            <p class="small">The 2025 corrigendum fixes a default-value error: <b>pptd</b> (+482%) and <b>uildt</b> (−95%) are the largest relative changes — not <b>alic1</b>, whose change is +8.9% (14 → 15.24 years).</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card" style="padding:10px 13px 2px;background:rgba(255,253,247,.5);flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">
+              <h4 style="margin:0">Largest parameter shifts</h4>
+              <span class="tiny mono">% change from default</span>
+            </div>
+            <div id="nebelChart"></div>
+          </div>
+          <p class="tiny" style="margin-top:5px">Diverging bar chart: default → recalibrated. Positive shifts extend right; negative shifts left. Labels show the parameter code; hover for full names and values. The pptd bar is clipped at +100%; its true shift is +482%.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 13 SENSITIVITY ============ -->
+    <section class="slide" data-kicker="12 · The sensitivity debate" data-source="Vermeulen & de Jongh (1976), Appl. Math. Modelling 1: 29–32, Table 1; Turner (2013); Nebel et al. (2024), §3.3; Herrington (2021), §1.4" data-title="Sensitive numbers, robust story">
+      <h2 class="s-title">Sensitive numbers, <em>robust story</em></h2>
+      <div class="s-body cols c-55">
+        <div class="stack">
+          <p class="lead">In 1976, Vermeulen and de Jongh showed that World3 was <b>very sensitive</b> to small parameter changes. Altering three capital parameters by 10% in 1975 was enough to avert the standard run's collapse.</p>
+          <div class="card" style="padding:10px 13px 4px">
+            <h4>Maximum inflation factor · capital sector</h4>
+            <div id="tornadoChart"></div>
+            <p class="tiny" style="margin-top:2px">Normalised sensitivity: % change in a state variable per 1% change in the parameter, maximum over 1900–2100. Values above 1 amplify; above 10 are extreme.</p>
+          </div>
+        </div>
+        <div class="stack" style="gap:9px">
+          <div class="card warm">
+            <h4>1976: the model is fragile</h4>
+            <p class="small">ICOR, FIOAC and ALIC were the pressure points. A 10% shift in the “optimistic” direction averted collapse; the opposite direction produced a worse disaster. The authors concluded that small, well-aimed pressures might change the world's path.</p>
+          </div>
+          <div class="card tint">
+            <h4>Today: the mode is robust</h4>
+            <p class="small">Later work replicated the perturbations and found that the <b>timing, height and cause</b> change — but overshoot and decline remain. Nebel's sensitivity runs all reproduce the same behaviour mode.</p>
+          </div>
+          <div class="quotebox" style="background:var(--ink)">
+            <p>“It is the dynamics of the system that is most important, not the value of a particular parameter at a particular point in time.”</p>
+            <div class="by">Nebel et al., 2024, §3.3</div>
+          </div>
+          <p class="tiny">Both claims can be true at once. Parameter sensitivity undermines <b>point forecasts</b>; structural robustness supports <b>risk statements</b>. That is why we should talk about the shape of the future, not a single date.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 14 EDEN3 ============ -->
+    <section class="slide" data-kicker="13 · A parsimonious successor" data-source="Pierrel, Nguyen-Huu & Gaucherel (2025), Futures 170: 103597. Network shown is a schematic of the 13-variable Eden3 model." data-title="From complexity to clarity">
+      <h2 class="s-title">From complexity to clarity: <em>Eden3</em></h2>
+      <div class="s-body cols c-55">
+        <div class="stack">
+          <p class="lead">Eden3 distils the Limits to Growth narrative into <b>13 binary variables</b> and <b>40 qualitative rules</b>. No differential equations, no calibrated parameters — just the causal structure.</p>
+          <div class="stat-row">
+            <div class="stat"><div class="n">13</div><div class="l">variables</div></div>
+            <div class="stat"><div class="n">40</div><div class="l">rules</div></div>
+            <div class="stat"><div class="n">5,268</div><div class="l">possible states</div></div>
+            <div class="stat"><div class="n">11/11</div><div class="l">LtG scenarios reproduced</div></div>
+          </div>
+          <p class="body-t">The model recovers every published LtG scenario as a path through a state-transition graph. It also finds paths the original authors did not draw.</p>
+          <div class="card tint">
+            <h4>Three structural findings</h4>
+            <p class="small"><b>1.</b> Population and industrial output are the most connected nodes. <b>2.</b> The resource threshold decides whether the system falls into the terminal (collapse) basin. <b>3.</b> Technology can restore a sector temporarily, but cannot repeal the limit.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="card" style="padding:6px 8px 2px;background:rgba(255,253,247,.4);flex:1">
+            <div id="edenNet" style="height:100%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <span class="hint">click a node to trace its neighbours</span>
+            <span class="tiny mono" id="edenPick" style="color:var(--teal)">population</span>
+          </div>
+          <p class="tiny">Dashed edges are technology responses. The graph is qualitative: it tells you what <i>can</i> happen, not when or how likely.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 15 CRITIQUE ============ -->
+    <section class="slide" data-kicker="14 · Appraisal" data-source="Nordhaus (1973); Vermeulen & de Jongh (1976); Herrington (2021), §1.4; Nebel et al. (2024), §4.2; Pierrel et al. (2025), §4" data-title="What World3 gets right — and what it cannot do">
+      <h2 class="s-title">What World3 gets right — and what it <em>cannot do</em></h2>
+      <div class="s-body" style="gap:13px;justify-content:center">
+        <p class="lead" style="max-width:1000px;font-size:14.5px">The model is best judged as a reasoning tool: what it clarifies, where it overreaches, and how to use it without pretending that it can foretell the future.</p>
+        <div class="cols c-50" style="align-items:stretch;gap:16px">
+          <div class="card tint" style="flex:1;padding:16px 18px">
+            <h4 style="font-size:12.5px">Enduring lessons</h4>
+            <ol style="margin:8px 0 0 16px;padding:0;font-size:12px;line-height:1.55;color:var(--ink-2)">
+              <li style="margin-bottom:8px"><b>Limits are plural.</b> Solve one and another becomes binding. There is no single “resource crisis”.</li>
+              <li style="margin-bottom:8px"><b>Delays manufacture overshoot.</b> A smooth signal today can hide a committed decline tomorrow.</li>
+              <li style="margin-bottom:8px"><b>Exponential growth exhausts fixed stocks suddenly</b>, not gradually. The last doubling is the whole story.</li>
+              <li style="margin-bottom:8px"><b>Technology changes timing; values and institutions change direction.</b> Only SW avoids decline, and it needs both.</li>
+              <li><b>Models are arguments made explicit.</b> They can be inspected, criticised and improved — unlike intuition.</li>
+            </ol>
+          </div>
+          <div class="card warm" style="flex:1;padding:16px 18px">
+            <h4 style="font-size:12.5px">Limits and critiques</h4>
+            <ol style="margin:8px 0 0 16px;padding:0;font-size:12px;line-height:1.55;color:var(--ink-2)">
+              <li style="margin-bottom:8px"><b>One aggregated world.</b> No regions, trade, inequality or politics. A global average can hide a collapse next door.</li>
+              <li style="margin-bottom:8px"><b>No price system or endogenous innovation.</b> Scarcity does not automatically trigger substitution, as critics from Solow onward argued.</li>
+              <li style="margin-bottom:8px"><b>Sensitive parameters, proxy data.</b> CO₂ for pollution, industrial production index for output, education for services.</li>
+              <li style="margin-bottom:8px"><b>Post-collapse trajectories are not credible.</b> The equations hold social relationships constant — exactly what would change.</li>
+              <li><b>Normative assumptions are embedded</b> in structure: what counts as welfare, what technology can do, whose future is modelled.</li>
+            </ol>
+          </div>
+        </div>
+        <div class="card dark" style="padding:13px 18px;display:flex;align-items:center;gap:20px">
+          <div style="width:190px;flex:none">
+            <h4 style="color:#9FD3C5;margin-bottom:4px">Diagnostic, not oracle</h4>
+            <p style="font-size:9.5px;line-height:1.45;color:rgba(246,241,230,.72)">Use the model to ask better questions, not to extract a date.</p>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div style="text-align:center;flex:1"><div class="mono" style="font-size:8px;color:#9FD3C5">01</div><div style="font-size:10px;line-height:1.3;margin-top:2px">Name the question</div></div>
+            <div style="color:rgba(246,241,230,.35)">→</div>
+            <div style="text-align:center;flex:1"><div class="mono" style="font-size:8px;color:#9FD3C5">02</div><div style="font-size:10px;line-height:1.3;margin-top:2px">Vary an assumption</div></div>
+            <div style="color:rgba(246,241,230,.35)">→</div>
+            <div style="text-align:center;flex:1"><div class="mono" style="font-size:8px;color:#9FD3C5">03</div><div style="font-size:10px;line-height:1.3;margin-top:2px">Read the behaviour mode</div></div>
+            <div style="color:rgba(246,241,230,.35)">→</div>
+            <div style="text-align:center;flex:1"><div class="mono" style="font-size:8px;color:#9FD3C5">04</div><div style="font-size:10px;line-height:1.3;margin-top:2px">Choose under uncertainty</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 16 SYNTHESIS ============ -->
+    <section class="slide" data-kicker="15 · Synthesis" data-source="Synthesis of Meadows et al. (1972; 2004); Turner (2008); Herrington (2021); Nebel et al. (2024); Pierrel et al. (2025)" data-title="The future is chosen within limits">
+      <h2 class="s-title">The future is not predicted; it is <em>chosen within limits</em></h2>
+      <div class="s-body" style="display:flex;flex-direction:column;gap:12px;justify-content:center">
+        <p class="lead" style="max-width:980px;font-size:16px">World3 does not tell us what <i>will</i> happen. It tells us what kind of system we are running: one where growth is fast, feedback is slow, and the bill for overshoot arrives later than the decision that caused it.</p>
+        <div class="cols" style="grid-template-columns:repeat(4,1fr);gap:10px;align-items:stretch">
+          <div class="card" style="border-top:2px solid var(--teal)">
+            <div class="mini-num">01</div>
+            <h4 style="margin-top:5px">Slow the throughput</h4>
+            <p class="small">Reduce the rate at which materials and energy pass through the economy. Efficiency buys time; sufficiency changes the destination.</p>
+          </div>
+          <div class="card" style="border-top:2px solid var(--amber)">
+            <div class="mini-num">02</div>
+            <h4 style="margin-top:5px">Shorten the delays</h4>
+            <p class="small">Measure what matters sooner, and act before the signal is unambiguous. Early response is cheaper than late repair.</p>
+          </div>
+          <div class="card" style="border-top:2px solid var(--blue)">
+            <div class="mini-num">03</div>
+            <h4 style="margin-top:5px">Protect the buffers</h4>
+            <p class="small">Soil, freshwater, forests and climate are the capacity that makes recovery possible. Eroding them turns a dip into a collapse.</p>
+          </div>
+          <div class="card" style="border-top:2px solid #6B5B8E">
+            <div class="mini-num">04</div>
+            <h4 style="margin-top:5px">Invest in response capacity</h4>
+            <p class="small">Institutions, knowledge and social trust determine whether a society can change course while it still has options.</p>
+          </div>
+        </div>
+        <div class="cols c-55" style="gap:18px;align-items:center;margin-top:2px">
+          <div class="quotebox" style="background:var(--teal)">
+            <p>“Humanity can either choose its own limit or at some point reach an imposed limit, at which time a decline in human welfare will have become unavoidable.”</p>
+            <div class="by">Herrington, 2021, paraphrasing the LtG message</div>
+          </div>
+          <div>
+            <h4 style="font:600 9px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 6px">For discussion</h4>
+            <p class="small" style="margin-bottom:4px">1. Which limit is binding <i>now</i> — and which one are we treating as background?</p>
+            <p class="small" style="margin-bottom:4px">2. Where are the longest delays between cause and consequence in our own institutions?</p>
+            <p class="small">3. If SW requires changed values, who gets to decide what “enough” means?</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 17 REFERENCES ============ -->
+    <section class="slide" data-kicker="16 · Sources" data-source="All quotations and numerical values are attributed on the slide where they appear. Figures are redrawn or stylised; no copyrighted figures are reproduced." data-title="References & method">
+      <h2 class="s-title">References &amp; <em>method</em></h2>
+      <div class="s-body" style="gap:14px;justify-content:space-between">
+        <div class="cols c-60" style="align-items:start;gap:24px">
+          <div>
+            <div class="refs">
+          <p><b>Meadows, D. H., Meadows, D. L., Randers, J. &amp; Behrens, W. W.</b> (1972). <i>The Limits to Growth.</i> Universe Books.</p>
+          <p><b>Meadows, D. L., Behrens, W. W., Meadows, D. H., Naill, R. F., Randers, J. &amp; Zahn, E. K. O.</b> (1974). <i>The Dynamics of Growth in a Finite World.</i> Wright-Allen Press.</p>
+          <p><b>Meadows, D. H., Randers, J. &amp; Meadows, D. L.</b> (2005). <i>Limits to Growth: The 30-Year Update.</i> Earthscan.</p>
+          <p><b>Vermeulen, P. J. &amp; de Jongh, D. C. J.</b> (1976). Parameter sensitivity of the “Limits to Growth” world model. <i>Applied Mathematical Modelling</i> 1(1): 29–32.</p>
+          <p><b>Turner, G. M.</b> (2008). A comparison of The Limits to Growth with 30 years of reality. <i>Global Environmental Change</i> 18(3): 397–411. <span class="doi">doi:10.1016/j.gloenvcha.2008.05.001</span></p>
+          <p><b>Pasqualino, R., Jones, A. W., Monasterolo, I. &amp; Phillips, A.</b> (2015). Understanding global systems today — a calibration of the World3-03 model between 1995 and 2012. <i>Sustainability</i> 7: 9864–9889. <span class="doi">doi:10.3390/su7089864</span></p>
+          <p><b>Herrington, G.</b> (2021). Update to limits to growth: comparing the World3 model with empirical data. <i>Journal of Industrial Ecology</i> 25(3): 614–626. <span class="doi">doi:10.1111/jiec.13084</span></p>
+          <p><b>Nebel, A., Kling, A., Willamowski, R. &amp; Schell, T.</b> (2024). Recalibration of limits to growth: an update of the World3 model. <i>Journal of Industrial Ecology</i> 28: 87–99. <span class="doi">doi:10.1111/jiec.13442</span> — with <b>Corrigendum</b> (2025), <i>JIE</i> 29: 1443–1444. <span class="doi">doi:10.1111/jiec.70042</span></p>
+          <p><b>Pierrel, C., Nguyen-Huu, A. &amp; Gaucherel, C.</b> (2025). From complexity to clarity: Eden3's novel perspective on limits to growth. <i>Futures</i> 170: 103597. <span class="doi">doi:10.1016/j.futures.2025.103597</span></p>
+            </div>
+            <div class="card warm" style="margin-top:13px;padding:10px 13px">
+              <h4>Reading order</h4>
+              <p class="small"><b>Structure:</b> 1972, 1974, 2005. <b>Tests:</b> 2008, 2015, 2021. <b>Recalibration:</b> 2024 plus the 2025 corrigendum. <b>Reframing:</b> 2025 Eden3.</p>
+            </div>
+          </div>
+          <div class="stack" style="gap:12px">
+          <div class="card">
+            <h4>How the visuals were made</h4>
+            <p class="small">Charts are hand-built SVG. The standard-run and scenario curves are <b>stylised reconstructions</b> of published behaviour, not digitised data; the overshoot simulator is a toy model built to isolate the delay mechanism. Empirical values (NRMSD, closest-fit counts, parameter shifts, sensitivities) are taken from the papers cited.</p>
+          </div>
+          <div class="card tint">
+            <h4>Scope &amp; caveats</h4>
+            <p class="small">This deck is an interpretation, not a systematic review. Values are rounded from the cited papers; curves are stylised; the 2024 recalibration uses the corrected 2025 values. The supplied papers are the evidence base; the two <i>Limits to Growth</i> books and the Eden3 work supply context. Neither list is the whole literature.</p>
+          </div>
+          <div class="card">
+            <h4>Reproducibility</h4>
+            <p class="small">World3-03 has an open-source implementation in PyWorld3-03, and the 2024 study releases its optimisation code and data. Reproducing a run is the best way to see how assumptions move the output.</p>
+          </div>
+          <p class="tiny">Prepared as a master's-level explanatory seminar. Press <span class="kbd">N</span> for speaker notes, <span class="kbd">O</span> for the overview, <span class="kbd">←</span> <span class="kbd">→</span> to navigate.</p>
+        </div>
+      </div>
+      <div class="card tint" style="padding:10px 16px 9px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div style="font:600 8.5px/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--teal);width:92px;flex:none;padding-top:7px">Evidence trail</div>
+          <div style="flex:1;display:flex;gap:12px">
+            <div style="flex:1;border-top:2px solid var(--teal);padding-top:5px"><div class="mono" style="font-size:8.5px;color:var(--teal)">1972</div><div style="font-size:9.5px;line-height:1.25">model</div></div>
+            <div style="flex:1;border-top:2px solid var(--teal);padding-top:5px"><div class="mono" style="font-size:8.5px;color:var(--teal)">1976</div><div style="font-size:9.5px;line-height:1.25">sensitivity</div></div>
+            <div style="flex:1;border-top:2px solid var(--teal);padding-top:5px"><div class="mono" style="font-size:8.5px;color:var(--teal)">2008</div><div style="font-size:9.5px;line-height:1.25">Turner</div></div>
+            <div style="flex:1;border-top:2px solid var(--teal);padding-top:5px"><div class="mono" style="font-size:8.5px;color:var(--teal)">2015</div><div style="font-size:9.5px;line-height:1.25">calibration</div></div>
+            <div style="flex:1;border-top:2px solid var(--teal);padding-top:5px"><div class="mono" style="font-size:8.5px;color:var(--teal)">2021</div><div style="font-size:9.5px;line-height:1.25">data update</div></div>
+            <div style="flex:1;border-top:2px solid var(--teal);padding-top:5px"><div class="mono" style="font-size:8.5px;color:var(--teal)">2024</div><div style="font-size:9.5px;line-height:1.25">recalibration</div></div>
+            <div style="flex:1;border-top:2px solid var(--teal);padding-top:5px"><div class="mono" style="font-size:8.5px;color:var(--teal)">2025</div><div style="font-size:9.5px;line-height:1.25">Eden3</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+    <div id="progress" aria-label="Slide progress"></div>
+    <div id="help">← → move &nbsp;·&nbsp; N notes &nbsp;·&nbsp; O overview</div>
+    <div class="ui">
+      <span class="count" id="count">1 / 17</span>
+      <button id="btnPrev" aria-label="Previous slide">‹</button>
+      <button id="btnNext" aria-label="Next slide">›</button>
+    </div>
+    <div id="notes"><div class="nk">Speaker notes · N to close</div><div class="nt" id="notesBody"></div></div>
+    <div id="overview"></div>
+    <div id="tip"></div>
+  </div>
+</div>
+<script>
+/* ============================================================
+   World3 seminar deck — all visuals hand-built, no dependencies
+   ============================================================ */
+const NS="http://www.w3.org/2000/svg";
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+
+const C={
+  ink:"#14201C", ink2:"#24332D", muted:"#66736C", line:"#D9D0BE", line2:"#C7BCA5",
+  teal:"#0E6B5C", teal2:"#3E8F80", amber:"#BF5B2A", blue:"#2B4C7E",
+  red:"#A33A2A", olive:"#78863C", purple:"#6B5B8E", grey:"#6C7370",
+  paper:"#F6F1E6", paper2:"#FBF7EE"
+};
+
+function S(tag,attrs={},parent=null){
+  const e=document.createElementNS(NS,tag);
+  for(const [k,v] of Object.entries(attrs)){
+    if(v===undefined||v===null) continue;
+    if(k==="text") e.textContent=v; else e.setAttribute(k,v);
+  }
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function tx(parent,x,y,text,attrs={}){
+  const t=S("text",Object.assign({x,y},attrs),parent);
+  t.textContent=text; return t;
+}
+function pathD(pts){
+  if(!pts.length) return "";
+  let d=`M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`;
+  for(let i=1;i<pts.length;i++) d+=`L${pts[i][0].toFixed(2)},${pts[i][1].toFixed(2)}`;
+  return d;
+}
+function smoothD(pts,tension=1){
+  if(pts.length<2) return pathD(pts);
+  let d=`M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+    const c1x=p1[0]+(p2[0]-p0[0])/6*tension, c1y=p1[1]+(p2[1]-p0[1])/6*tension;
+    const c2x=p2[0]-(p3[0]-p1[0])/6*tension, c2y=p2[1]-(p3[1]-p1[1])/6*tension;
+    d+=`C${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2[0].toFixed(2)},${p2[1].toFixed(2)}`;
+  }
+  return d;
+}
+function interp(points,x){
+  if(x<=points[0][0]) return points[0][1];
+  if(x>=points[points.length-1][0]) return points[points.length-1][1];
+  for(let i=0;i<points.length-1;i++){
+    const a=points[i],b=points[i+1];
+    if(x>=a[0]&&x<=b[0]) return lerp(a[1],b[1],(x-a[0])/(b[0]-a[0]));
+  }
+  return points[points.length-1][1];
+}
+function curvePoints(points,xd,yd,X,Y){
+  const out=[];
+  for(let x=xd[0];x<=xd[1];x+=2) out.push([X(x),Y(interp(points,x))]);
+  return out;
+}
+function drawAxes(g,o){
+  const {x0,x1,y0,y1,yd,yTicks,yFmt=v=>Math.round(v),xTicks,xFmt=v=>v,xTitle,yTitle}=o;
+  if(yTicks){
+    yTicks.forEach(v=>{
+      const y=lerp(y1,y0,(v-yd[0])/(yd[1]-yd[0]));
+      S("line",{x1:x0,x2:x1,y1:y,y2:y,class:"gridline"},g);
+      tx(g,x0-6,y+3,yFmt(v),{class:"ticktext","text-anchor":"end"});
+    });
+  }
+  S("line",{x1:x0,x2:x1,y1:y1,y2:y1,class:"axisline"},g);
+  if(xTicks){
+    xTicks.forEach(v=>{
+      const x=lerp(x0,x1,(v-o.xd[0])/(o.xd[1]-o.xd[0]));
+      S("line",{x1:x,x2:x,y1:y1,y2:y1+3,class:"axisline"},g);
+      tx(g,x,y1+13,xFmt(v),{class:"ticktext","text-anchor":"middle"});
+    });
+  }
+  if(xTitle) tx(g,x1,y1+27,xTitle,{class:"axistitle","text-anchor":"end"});
+  if(yTitle) tx(g,x0-6,y0-8,yTitle,{class:"axistitle","text-anchor":"start"});
+}
+const tip=$("#tip");
+function showTip(html,e){
+  tip.innerHTML=html; tip.style.opacity=1; moveTip(e);
+}
+function moveTip(e){
+  const pad=14, w=tip.offsetWidth||180, h=tip.offsetHeight||40;
+  let x=e.clientX+pad, y=e.clientY+pad;
+  if(x+w>innerWidth-8) x=e.clientX-w-pad;
+  if(y+h>innerHeight-8) y=e.clientY-h-pad;
+  tip.style.left=x+"px"; tip.style.top=y+"px";
+}
+function hideTip(){ tip.style.opacity=0; }
+function onHover(el,html){
+  el.addEventListener("pointerenter",e=>showTip(html,e));
+  el.addEventListener("pointermove",moveTip);
+  el.addEventListener("pointerleave",hideTip);
+}
+</script>
+<script>
+/* ============================== DECK SHELL ============================== */
+const stage=$("#stage"), slides=$$(".slide");
+const total=slides.length;
+let cur=0, notesOpen=false, overviewOpen=false;
+
+function buildChrome(){
+  slides.forEach((sl,i)=>{
+    if(sl.dataset.bare) return;
+    const kick=sl.dataset.kicker||"";
+    const src=sl.dataset.source||"";
+    const head=document.createElement("div"); head.className="s-head";
+    head.innerHTML=`<div class="kicker">${kick}</div><div class="rule"></div><div class="tag">World3 · ${String(i+1).padStart(2,"0")}</div>`;
+    sl.prepend(head);
+    const foot=document.createElement("div"); foot.className="s-foot";
+    foot.innerHTML=`<div class="src">${src}</div><div class="s-num">${String(i+1).padStart(2,"0")} / ${total}</div>`;
+    sl.appendChild(foot);
+  });
+}
+
+function buildProgress(){
+  const p=$("#progress");
+  for(let i=0;i<total;i++){
+    const b=document.createElement("button");
+    b.setAttribute("aria-label","Go to slide "+(i+1));
+    b.addEventListener("click",()=>go(i));
+    p.appendChild(b);
+  }
+}
+function buildOverview(){
+  const ov=$("#overview");
+  ov.innerHTML=`<div class="ovh">Overview</div>`;
+  slides.forEach((sl,i)=>{
+    const b=document.createElement("button");
+    b.innerHTML=`<b>${String(i+1).padStart(2,"0")}</b>${sl.dataset.title||("Slide "+(i+1))}`;
+    b.addEventListener("click",()=>{toggleOverview(false);go(i);});
+    ov.appendChild(b);
+  });
+  const s=document.createElement("div"); s.className="ovs"; s.textContent="Click any slide to jump · press O or Esc to close";
+  ov.appendChild(s);
+}
+function toggleOverview(force){
+  overviewOpen=(force===undefined)?!overviewOpen:force;
+  $("#overview").classList.toggle("open",overviewOpen);
+}
+function renderNotes(){
+  const n=NOTES[cur]||"";
+  $("#notesBody").innerHTML=n;
+}
+function toggleNotes(force){
+  notesOpen=(force===undefined)?!notesOpen:force;
+  $("#notes").classList.toggle("open",notesOpen);
+  if(notesOpen) renderNotes();
+}
+
+const inited=new Set();
+function initSlide(i){
+  if(inited.has(i)) return;
+  const fn=INITS[i];
+  if(fn){ try{ fn(); }catch(err){ console.error("init slide",i,err); } }
+  inited.add(i);
+}
+
+function go(n,fromHash=false){
+  n=clamp(n,0,total-1);
+  if(n===cur && inited.has(n)) return;
+  slides[cur].classList.remove("active");
+  cur=n;
+  slides[cur].classList.add("active");
+  initSlide(cur);
+  $("#count").textContent=`${cur+1} / ${total}`;
+  $$("#progress button").forEach((b,i)=>{
+    b.classList.toggle("on",i===cur);
+    b.classList.toggle("done",i<cur);
+  });
+  if(!fromHash){
+    try{ history.replaceState(null,"","#s="+(cur+1)); }catch(e){}
+  }
+  if(notesOpen) renderNotes();
+  hideTip();
+}
+
+function fitStage(){
+  // Measure the actual embedded viewport, not the outer browser window.
+  // This is important when the deck is displayed inside a PowerPoint add-in.
+  const viewportEl=$("#viewport");
+  const rect=viewportEl.getBoundingClientRect();
+  const width=Math.max(1, rect.width || document.documentElement.clientWidth || innerWidth);
+  const height=Math.max(1, rect.height || document.documentElement.clientHeight || innerHeight);
+  const scale=Math.min(width/1280, height/720);
+  stage.style.setProperty("--stage-scale", String(Math.max(0.05, scale)));
+}
+
+/* keyboard */
+addEventListener("keydown",e=>{
+  const t=e.target;
+  if(t && (t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable)) return;
+  if(e.key==="ArrowRight"||e.key==="PageDown"||e.key===" "){ e.preventDefault(); go(cur+1); }
+  else if(e.key==="ArrowLeft"||e.key==="PageUp"){ e.preventDefault(); go(cur-1); }
+  else if(e.key==="Home"){ e.preventDefault(); go(0); }
+  else if(e.key==="End"){ e.preventDefault(); go(total-1); }
+  else if(e.key==="n"||e.key==="N"){ e.preventDefault(); toggleNotes(); }
+  else if(e.key==="o"||e.key==="O"){ e.preventDefault(); toggleOverview(); }
+  else if(e.key==="Escape"){ toggleOverview(false); toggleNotes(false); }
+  else if(e.key==="f"||e.key==="F"){
+    e.preventDefault();
+    if(document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen?.();
+  }
+});
+$("#btnPrev").addEventListener("click",()=>go(cur-1));
+$("#btnNext").addEventListener("click",()=>go(cur+1));
+addEventListener("resize",fitStage,{passive:true});
+if(window.visualViewport) visualViewport.addEventListener("resize",fitStage,{passive:true});
+if("ResizeObserver" in window){
+  const viewportObserver=new ResizeObserver(fitStage);
+  viewportObserver.observe($("#viewport"));
+}
+
+/* ============================== 1 · COVER ============================== */
+const coverData={
+  y1972:[[1900,1.6],[1950,2.5],[1970,3.7],[1990,5.2],[2010,6.6],[2030,7.9],[2050,8.2],[2070,6.5],[2090,4.2],[2100,3.4]],
+  y2004:[[1900,1.6],[1950,2.5],[1970,3.7],[1990,5.3],[2010,6.9],[2030,8.3],[2050,8.6],[2070,7.2],[2090,5.0],[2100,4.1]],
+  y2024:[[1900,1.6],[1950,2.5],[1970,3.7],[1990,5.4],[2010,7.0],[2030,8.5],[2050,8.9],[2070,8.6],[2090,7.1],[2100,5.6]]
+};
+function initCover(){
+  const host=$("#coverChart");
+  const W=670,H=360,L=40,R=48,T=30,B=24;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const X=x=>lerp(L,W-R,(x-1900)/200);
+  const Y=y=>lerp(H-B,T,y/10.5);
+  [0,2.5,5,7.5,10].forEach(v=>{
+    S("line",{x1:L,x2:W-R,y1:Y(v),y2:Y(v),class:"cv-grid"},svg);
+    tx(svg,L-7,Y(v)+3,v===0?"0":String(v),{class:"cv-lab","text-anchor":"end"});
+  });
+  [1900,1950,2000,2050,2100].forEach(v=>{
+    S("line",{x1:X(v),x2:X(v),y1:T,y2:H-B,class:"cv-grid",opacity:.45},svg);
+    tx(svg,X(v),H-8,String(v),{class:"cv-lab","text-anchor":v===1900?"start":v===2100?"end":"middle"});
+  });
+  tx(svg,L,T-14,"world population · stylised (billions)",{class:"cv-lab"});
+  const defs=S("defs",{},svg);
+  const grad=S("linearGradient",{id:"coverFill",x1:0,y1:0,x2:0,y2:1},defs);
+  S("stop",{offset:"0%","stop-color":C.amber,"stop-opacity":.16},grad);
+  S("stop",{offset:"100%","stop-color":C.amber,"stop-opacity":0},grad);
+  const pts2024=curvePoints(coverData.y2024,[1900,2100],[0,10.5],X,Y);
+  S("path",{d:smoothD(pts2024)+`L${X(2100)},${H-B}L${X(1900)},${H-B}Z`,fill:"url(#coverFill)",stroke:"none"},svg);
+  const lines=[
+    {d:coverData.y1972,c:"rgba(244,239,227,.38)",w:1.5,lab:"1972"},
+    {d:coverData.y2004,c:"rgba(143,199,184,.72)",w:1.8,lab:"2004"},
+    {d:coverData.y2024,c:"#E39B72",w:2.4,lab:"2024"}
+  ];
+  lines.forEach((ln,i)=>{
+    const pts=curvePoints(ln.d,[1900,2100],[0,10.5],X,Y);
+    S("path",{d:smoothD(pts),fill:"none",stroke:ln.c,"stroke-width":ln.w,"stroke-linecap":"round"},svg);
+    const end=ln.d[ln.d.length-1];
+    tx(svg,X(2100)+3,Y(end[1])+3,ln.lab,{class:"cv-big",fill:ln.c,"text-anchor":"start","font-size":9});
+  });
+  // now marker
+  S("line",{x1:X(2025),x2:X(2025),y1:T+6,y2:H-B,stroke:"rgba(244,239,227,.45)","stroke-dasharray":"3 4"},svg);
+  tx(svg,X(2025)-4,T+3,"now",{class:"cv-note","text-anchor":"end"});
+  // annotation in the clear upper band, above the declining curves
+  S("path",{d:`M${X(2050)},${Y(9.25)} l10,-5`,fill:"none",stroke:"rgba(244,239,227,.32)","stroke-width":1},svg);
+  tx(svg,X(2055),Y(10.02),"overshoot",{class:"cv-note"});
+  tx(svg,X(2055),Y(10.02)+10,"and decline",{class:"cv-note"});
+  onHover(svg,"<b>Three generations of the standard run</b><br>Stylised population trajectories from the 1972 model, the 2004 update and the 2024 recalibration. The shape — rise, peak, decline — is the signature of overshoot. Exact peak heights and dates differ by version.");
+}
+
+/* ============================== 2 · TIMELINE ============================== */
+const timeline=[
+  {y:1972,t:"model",full:"World3 introduced in The Limits to Growth"},
+  {y:2004,t:"World3-03",full:"30-Year Update: technology sector, welfare, footprint"},
+  {y:2008,t:"Turner",full:"30 years of data compared with the scenarios"},
+  {y:2015,t:"calibration",full:"World3-03 calibrated to 1995–2012 data"},
+  {y:2023,t:"recalibration era",full:"Data update (2021), full recalibration (2024) and the Eden3 reconstruction (2025)"}
+];
+function initTimeline(){
+  const host=$("#pubTimeline");
+  const W=430,H=246,L=18,R=14,Y=122;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const X=y=>lerp(L,W-R,(y-1969)/(2027-1969));
+  S("line",{x1:L,x2:W-R,y1:Y,y2:Y,stroke:C.line2,"stroke-width":1},svg);
+  timeline.forEach((n,i)=>{
+    const x=X(n.y), up=i%2===0;
+    const g=S("g",{class:"loop-node"},svg);
+    S("circle",{cx:x,cy:Y,r:12,fill:"transparent"},g);
+    S("circle",{cx:x,cy:Y,r:3.2,fill:i===0?C.amber:C.teal},g);
+    S("line",{x1:x,x2:x,y1:Y+(up?-4:4),y2:Y+(up?-12:12),stroke:C.line2,"stroke-width":1},g);
+    tx(g,x,Y+(up?-17:23),String(n.y),{class:"qlabel","text-anchor":"middle","font-size":8.5,fill:i===0?C.amber:C.ink});
+    tx(g,x,Y+(up?-27:34),n.t,{class:"ticktext","text-anchor":"middle","font-size":7.4,fill:C.muted});
+    onHover(g,`<b>${n.y} · ${n.t}</b><br>${n.full}`);
+  });
+  tx(svg,L,H-6,"1972 → today · hover a milestone for the study and its role",{class:"ticktext","font-size":7.5});
+}
+
+/* ============================== 3 · CAUSAL LOOPS ============================== */
+const loopNodes={
+  pop:{x:84,y:92,label:"Population",sub:"people"},
+  io:{x:300,y:78,label:"Industrial",sub:"output"},
+  res:{x:432,y:206,label:"Resources",sub:"non-renewable"},
+  pol:{x:248,y:244,label:"Pollution",sub:"persistent"},
+  food:{x:90,y:228,label:"Food",sub:"& land"}
+};
+const loopEdges=[
+  {id:"r1",from:"pop",to:"io",sign:"+",loop:"R",curve:0},
+  {id:"r2",from:"io",to:"pop",sign:"+",loop:"R",curve:-34},
+  {id:"b1a",from:"io",to:"res",sign:"+",loop:"B1",curve:20},
+  {id:"b1b",from:"res",to:"io",sign:"−",loop:"B1",curve:-26},
+  {id:"b2a",from:"io",to:"pol",sign:"+",loop:"B2",curve:14},
+  {id:"b2b",from:"pol",to:"food",sign:"−",loop:"B2",curve:10},
+  {id:"b2c",from:"food",to:"pop",sign:"+",loop:"B2",curve:12}
+];
+function edgeGeom(a,b,curve){
+  const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+  const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+  const nx=-dy/len,ny=dx/len;
+  const ox=mx+nx*curve,oy=my+ny*curve;
+  const t=0.86;
+  return {
+    d:`M${a.x},${a.y} Q${ox},${oy} ${lerp(a.x,b.x,t)},${lerp(a.y,b.y,t)}`,
+    mx:lerp(lerp(a.x,ox,0.5),lerp(ox,b.x,0.5),0.5),
+    my:lerp(lerp(a.y,oy,0.5),lerp(oy,b.y,0.5),0.5)
+  };
+}
+function initLoops(){
+  const host=$("#loopChart");
+  const W=520,H=312;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const defs=S("defs",{},svg);
+  ["arrG","arrA","arrB"].forEach((id,i)=>{
+    const m=S("marker",{id,viewBox:"0 0 10 10",refX:8,refY:5,markerWidth:5,markerHeight:5,orient:"auto-start-reverse"},defs);
+    S("path",{d:"M0,0 L10,5 L0,10 z",fill:[C.ink2,C.teal,C.amber][i]},m);
+  });
+  const edgeEls={};
+  loopEdges.forEach(ed=>{
+    const a=loopNodes[ed.from],b=loopNodes[ed.to];
+    const gm=edgeGeom(a,b,ed.curve);
+    const base=S("path",{d:gm.d,fill:"none",stroke:C.line2,"stroke-width":1.4,"marker-end":`url(#arrG)`,opacity:.55},svg);
+    const hot=S("path",{d:gm.d,fill:"none",stroke:ed.loop==="R"?C.teal:ed.loop==="B1"?C.amber:C.grey,"stroke-width":2.2,"marker-end":`url(#${ed.loop==="R"?"arrA":"arrB"})`,opacity:0},svg);
+    edgeEls[ed.id]={base,hot};
+    const sg=Math.sign(ed.curve||1)||1;
+    tx(svg,gm.mx,gm.my-4,ed.sign,{class:"qlabel","text-anchor":"middle",fill:ed.loop==="R"?C.teal:ed.loop==="B1"?C.amber:C.grey,"font-size":9});
+  });
+  Object.entries(loopNodes).forEach(([id,n])=>{
+    const g=S("g",{class:"loop-node",id:"ln-"+id},svg);
+    S("circle",{cx:n.x,cy:n.y,r:34,fill:"rgba(14,107,92,.10)",class:"halo"},g);
+    S("circle",{cx:n.x,cy:n.y,r:26,fill:C.paper2,stroke:C.line2,"stroke-width":1.2},g);
+    S("circle",{cx:n.x,cy:n.y,r:5,fill:id==="pop"?C.red:id==="io"?C.blue:id==="res"?C.purple:id==="pol"?C.grey:C.olive},g);
+    tx(g,n.x,n.y+11,n.label,{class:"qlabel","text-anchor":"middle","font-size":8.2,fill:C.ink});
+    tx(g,n.x,n.y+20,n.sub,{class:"ticktext","text-anchor":"middle","font-size":6.8});
+    onHover(g,`<b>${n.label}</b> · ${n.sub}<br>Click a loop button to trace how this node is pulled in different directions.`);
+  });
+  const captions={
+    R:"<b>R · growth.</b> More people produce more output; more output supports more people. This loop is why the model grows exponentially — until a limit binds.",
+    B1:"<b>B1 · resources.</b> Output requires materials. Extraction depletes the stock, so each additional unit of output costs more. The balancing loop strengthens over time.",
+    B2:"<b>B2 · pollution.</b> Output emits persistent pollution. Pollution reduces food and health with a delay, so the feedback arrives after the damage.",
+    all:"<b>All loops.</b> Growth dominates early because reinforcing loops act quickly. Limits dominate later because balancing loops act slowly — and carry delays."
+  };
+  function select(mode){
+    $$("#loopBtns .btn").forEach(b=>b.classList.toggle("active",b.dataset.loop===mode));
+    Object.values(edgeEls).forEach(e=>{e.hot.setAttribute("opacity",0);e.base.setAttribute("opacity",.55);});
+    if(mode==="all"){
+      loopEdges.forEach(ed=>{ edgeEls[ed.id].hot.setAttribute("opacity",.9); });
+    }else{
+      loopEdges.filter(ed=>ed.loop===mode).forEach(ed=>{
+        edgeEls[ed.id].hot.setAttribute("opacity",1);
+        edgeEls[ed.id].base.setAttribute("opacity",0);
+      });
+    }
+    $("#loopCaption").innerHTML=captions[mode];
+  }
+  $$("#loopBtns .btn").forEach(b=>b.addEventListener("click",()=>select(b.dataset.loop)));
+  select("R");
+}
+
+/* ============================== 4 · SECTOR MAP ============================== */
+const sectors={
+  population:{
+    name:"Population",color:C.red,x:102,y:66,w:124,h:52,
+    sub:"4 cohorts · births / deaths",
+    text:"Four age cohorts. Births and deaths respond — with delays — to food, health services, education and environmental quality. A large cohort today becomes a large working-age cohort about 20 years later.",
+    facts:[["1.6 → 7.9","bn, 1900–2000"],["15–30 y","demographic delay"]]
+  },
+  capital:{
+    name:"Capital",color:C.blue,x:470,y:66,w:124,h:52,
+    sub:"investment · depreciation",
+    text:"Industrial capital produces goods, services and the machines used to extract resources. Investment adds to the stock; depreciation wears it down. When capital is diverted to extraction, less is left for everything else.",
+    facts:[["3 y","capital-output ratio"],["14 y","average lifetime"]]
+  },
+  agriculture:{
+    name:"Agriculture",color:C.olive,x:102,y:246,w:124,h:52,
+    sub:"land · yield · erosion",
+    text:"Food depends on arable land, land fertility, capital inputs and pollution. Intensification can raise yields, but can also erode soil and create a new limit. Food per capita, not total food, is what affects health.",
+    facts:[["3.2 bn ha","potentially arable"],["yield ↑","but soil erodes"]]
+  },
+  resources:{
+    name:"Resources",color:C.purple,x:470,y:246,w:124,h:52,
+    sub:"non-renewable stock",
+    text:"A finite stock of fossil fuels and minerals. Extraction rises as the economy grows; the remaining resource falls. Lower-grade deposits require more capital and energy, so the cost of the next unit rises.",
+    facts:[["1.0 × 10¹²","initial units (BAU)"],["↓","fraction remaining"]]
+  },
+  pollution:{
+    name:"Pollution",color:C.grey,x:286,y:286,w:128,h:50,
+    sub:"persistent stock",
+    text:"Persistent pollution accumulates from industrial, agricultural and household activity. It harms land fertility and human health with long lags. The stock, not the emission rate, is what does the damage.",
+    facts:[["20 y","transmission delay"],["+482%","recalibrated delay"]]
+  }
+};
+function initSectors(){
+  const host=$("#sectorMap");
+  const W=620,H=370;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const hub={x:310,y:168};
+  const centers={population:{x:164,y:92},capital:{x:470,y:92},agriculture:{x:164,y:272},resources:{x:470,y:272},pollution:{x:350,y:311}};
+  // cross links
+  const links=[
+    ["population","agriculture"],["population","pollution"],["capital","resources"],
+    ["capital","pollution"],["capital","agriculture"],["resources","agriculture"]
+  ];
+  links.forEach(([a,b])=>{
+    S("line",{x1:centers[a].x,y1:centers[a].y,x2:centers[b].x,y2:centers[b].y,stroke:C.line2,"stroke-width":1,"stroke-dasharray":"2 4",opacity:.65},svg);
+  });
+  // spokes
+  Object.entries(sectors).forEach(([id,s])=>{
+    const c=centers[id];
+    S("line",{x1:hub.x,y1:hub.y,x2:c.x,y2:c.y,stroke:s.color,"stroke-width":1.2,opacity:.22},svg);
+  });
+  const hubG=S("g",{},svg);
+  S("circle",{cx:hub.x,cy:hub.y,r:46,fill:C.ink},hubG);
+  S("circle",{cx:hub.x,cy:hub.y,r:52,fill:"none",stroke:C.ink,"stroke-width":.8,opacity:.25},hubG);
+  tx(hubG,hub.x,hub.y-2,"World3",{fill:C.paper,"font-size":13,"font-weight":600,"text-anchor":"middle",class:"qlabel"});
+  tx(hubG,hub.x,hub.y+11,"coupled",{fill:"#9FD3C5","font-size":7.2,"text-anchor":"middle",class:"ticktext"});
+  tx(hubG,hub.x,hub.y+20,"1900–2100",{fill:"#9FD3C5","font-size":6.8,"text-anchor":"middle",class:"ticktext"});
+
+  function detail(id){
+    const s=sectors[id];
+    $("#sdName").textContent=s.name;
+    $("#sdName").style.color=s.color;
+    $("#sdText").textContent=s.text;
+    $("#sdFacts").innerHTML=s.facts.map(([n,l])=>`<div style="flex:1;border-top:2px solid ${s.color};padding-top:4px"><div style="font-family:var(--serif);font-size:15px">${n}</div><div class="tiny">${l}</div></div>`).join("");
+    $$(".sector",svg).forEach(g=>g.classList.toggle("on",g.dataset.id===id));
+  }
+  Object.entries(sectors).forEach(([id,s])=>{
+    const g=S("g",{class:"sector","data-id":id},svg);
+    S("rect",{x:s.x-10,y:s.y-10,width:s.w+20,height:s.h+20,rx:5,fill:"rgba(14,107,92,.1)",class:"shalo"},g);
+    S("rect",{x:s.x,y:s.y,width:s.w,height:s.h,rx:3,fill:C.paper2,stroke:C.line2,"stroke-width":1},g);
+    S("rect",{x:s.x,y:s.y,width:4,height:s.h,rx:2,fill:s.color},g);
+    tx(g,s.x+12,s.y+20,s.name,{class:"slabel","font-size":11});
+    tx(g,s.x+12,s.y+33,s.sub,{class:"ticktext","font-size":7.2});
+    tx(g,s.x+12,s.y+45,id==="pollution"?"lagged damage":"click to inspect",{class:"ticktext","font-size":6.5,fill:s.color,opacity:.9});
+    g.addEventListener("click",()=>detail(id));
+    g.addEventListener("pointerenter",()=>{ g.style.opacity=1; detail(id); });
+    onHover(g,`<b>${s.name}</b><br>${s.sub}`);
+  });
+  detail("population");
+}
+</script>
+<script>
+/* ============================== 5 · OVERSHOOT LAB ============================== */
+function simOvershoot(delay){
+  const dt=0.1, Kmax=10, Kmin=6, t0=1980, t1=2080, er=0.03;
+  let X=0.5, E=0;
+  const pop=[], cap=[];
+  const Kbase=t=> t<=t0 ? Kmax : Math.max(Kmin,Kmax-(Kmax-Kmin)*(t-t0)/(t1-t0));
+  let peak={year:1900,x:0,k:0};
+  for(let t=1900;t<=2100+1e-9;t+=dt){
+    const K=Math.max(0.15,Kbase(t)-E);
+    const Klag=Math.max(0.22,Kbase(t-delay)-E);
+    E+=er*Math.max(0,X-K)*dt;
+    const r=X<Klag?0.04:0.14;
+    X+=r*X*(1-X/Math.max(Klag,0.25))*dt;
+    X=Math.max(X,0.001);
+    if(Math.abs(t-Math.round(t))<dt/2){
+      pop.push([Math.round(t),X]); cap.push([Math.round(t),K]);
+      if(X>peak.x) peak={year:Math.round(t),x:X,k:K};
+    }
+  }
+  return {pop,cap,peak,overshoot:peak.k>0?Math.max(0,peak.x/peak.k-1):0,end:X};
+}
+function initOvershoot(){
+  const host=$("#overshootChart");
+  const W=560,H=344,L=52,R=14,T=34,B=30;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const X=x=>lerp(L,W-R,(x-1900)/200);
+  const Y=y=>lerp(H-B,T,y/10);
+  drawAxes(svg,{x0:L,x1:W-R,y0:T,y1:H-B,yd:[0,10],yTicks:[0,2,4,6,8,10],
+    xd:[1900,2100],xTicks:[1900,1950,2000,2050,2100],xTitle:"year"});
+  const midY=(T+H-B)/2;
+  tx(svg,11,midY,"population / capacity (bn-equiv.)",{class:"axistitle","text-anchor":"middle",transform:`rotate(-90 11 ${midY})`});
+  const gPop=S("g",{},svg), gCap=S("g",{},svg), gOver=S("g",{},svg), gAnn=S("g",{},svg);
+  S("path",{d:"",fill:"none",stroke:C.teal,"stroke-width":2.5,"stroke-linecap":"round",id:"osPop"},gPop);
+  S("path",{d:"",fill:"none",stroke:C.amber,"stroke-width":1.7,"stroke-dasharray":"5 3",id:"osCap"},gCap);
+  S("path",{d:"",fill:"rgba(163,58,42,.12)",stroke:"none",id:"osOver"},gOver);
+  const peakDot=S("circle",{r:4,fill:C.ink,stroke:C.paper,"stroke-width":1.5},gAnn);
+  const peakLine=S("line",{stroke:C.ink,"stroke-width":1,"stroke-dasharray":"2 3",opacity:.45},gAnn);
+  const peakLab=tx(gAnn,0,0,"",{class:"qlabel","font-size":9,fill:C.ink,"text-anchor":"end"});
+  const overLab=tx(gAnn,0,0,"",{class:"qlabel","font-size":9,fill:C.red,"text-anchor":"end"});
+  const legend=S("g",{},svg);
+  [["population",C.teal,0],["capacity",C.amber,82],["overshoot",C.red,158]].forEach(([n,c,dx],i)=>{
+    S("line",{x1:L+dx,x2:L+dx+14,y1:T-10,y2:T-10,stroke:c,"stroke-width":i===1?1.7:2.5,"stroke-dasharray":i===1?"4 3":"0"},legend);
+    tx(legend,L+dx+18,T-7,n,{class:"ticktext","font-size":8.5});
+  });
+  tx(legend,W-R,T-7,"billion-people equivalent",{class:"ticktext","font-size":7.2,"text-anchor":"end"});
+
+  function update(delay){
+    const r=simOvershoot(delay);
+    const pp=r.pop.map(p=>[X(p[0]),Y(p[1])]);
+    const cc=r.cap.map(p=>[X(p[0]),Y(p[1])]);
+    $("#osPop").setAttribute("d",smoothD(pp));
+    $("#osCap").setAttribute("d",smoothD(cc));
+    // accurate fill between population and capacity wherever population exceeds it
+    let path="", open=false;
+    for(let i=0;i<r.pop.length;i++){
+      const [yr,x]=r.pop[i], k=r.cap[i][1];
+      if(x>k+0.02){
+        if(!open){ path+=`M${X(yr)},${Y(k)} `; open=true; }
+        path+=`L${X(yr)},${Y(x)} `;
+      }else if(open){
+        path+=`L${X(yr)},${Y(k)} Z `; open=false;
+      }
+    }
+    if(open) path+="Z";
+    $("#osOver").setAttribute("d",path);
+    const pk=r.peak;
+    peakDot.setAttribute("cx",X(pk.year)); peakDot.setAttribute("cy",Y(pk.x));
+    peakLine.setAttribute("x1",X(pk.year)); peakLine.setAttribute("x2",X(pk.year));
+    peakLine.setAttribute("y1",T); peakLine.setAttribute("y2",H-B);
+    peakLab.setAttribute("x",X(pk.year)-8); peakLab.setAttribute("y",Y(pk.x)-17);
+    peakLab.textContent="peak "+pk.year+" · "+pk.x.toFixed(1)+" bn";
+    const gap=r.overshoot;
+    overLab.setAttribute("x",X(pk.year)-8); overLab.setAttribute("y",Y(pk.x)-5);
+    overLab.textContent=gap>0.015?("overshoot +"+Math.round(gap*100)+"%"):"no overshoot";
+    $("#lagVal").textContent=delay+" y";
+    $("#overRead").innerHTML=gap>0.015
+      ? `peak ${pk.year} · ${pk.x.toFixed(1)} bn<br>overshoot +${Math.round(gap*100)}% · 2100: ${r.end.toFixed(1)} bn`
+      : `peak ${pk.year} · ${pk.x.toFixed(1)} bn<br>no overshoot · 2100: ${r.end.toFixed(1)} bn`;
+    $$("[data-lag]").forEach(b=>b.classList.toggle("active",Number(b.dataset.lag)===delay));
+  }
+  $("#lagSlider").addEventListener("input",e=>update(Number(e.target.value)));
+  $$("[data-lag]").forEach(b=>b.addEventListener("click",()=>{
+    const d=Number(b.dataset.lag);
+    $("#lagSlider").value=d; update(d);
+  }));
+  update(20);
+}
+
+/* ============================== 6 · STANDARD RUN ============================== */
+const runSeries=[
+  {id:"pop",name:"Population",unit:"index, 1970 = 100",color:C.teal,max:250,
+   d:[[1900,43],[1950,68],[1970,100],[1990,156],[2010,200],[2030,225],[2050,230],[2070,205],[2090,160],[2100,135]]},
+  {id:"food",name:"Food per capita",unit:"index, 1970 = 100",color:C.olive,max:130,
+   d:[[1900,80],[1950,88],[1970,100],[1990,112],[2010,118],[2030,112],[2050,96],[2070,76],[2090,60],[2100,55]]},
+  {id:"ind",name:"Industrial output / capita",unit:"index, 1970 = 100",color:C.blue,max:160,
+   d:[[1900,35],[1950,62],[1970,100],[1990,132],[2010,148],[2025,150],[2040,132],[2060,95],[2085,60],[2100,50]]},
+  {id:"pol",name:"Persistent pollution",unit:"index, 1970 = 100",color:C.grey,max:420,
+   d:[[1900,5],[1950,35],[1970,100],[1990,175],[2010,265],[2030,345],[2050,385],[2070,350],[2090,270],[2100,240]]},
+  {id:"res",name:"Non-renewable resources",unit:"% of 1900 stock",color:C.purple,max:100,
+   d:[[1900,100],[1950,88],[1970,78],[1990,62],[2010,48],[2030,34],[2050,22],[2070,13],[2090,7],[2100,4]]}
+];
+function initRun(){
+  const host=$("#multiples");
+  const W=600,H=338,L=98,R=52,T=8,B=22;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const X=x=>lerp(L,W-R,(x-1900)/200);
+  const rows=runSeries.map((s,i)=>({...s,y0:T+i*64+8,y1:T+i*64+52}));
+  // shared x axis
+  S("line",{x1:L,x2:W-R,y1:H-16,y2:H-16,class:"axisline"},svg);
+  [1900,1950,2000,2050,2100].forEach(v=>{
+    S("line",{x1:X(v),x2:X(v),y1:H-16,y2:H-13,class:"axisline"},svg);
+    tx(svg,X(v),H-3,String(v),{class:"ticktext","text-anchor":"middle","font-size":8.2});
+  });
+  const groups=[];
+  rows.forEach((r,idx)=>{
+    const Y=y=>lerp(r.y1,r.y0,y/r.max);
+    tx(svg,0,r.y0+10,r.name,{class:"qlabel","font-size":9.2,fill:C.ink});
+    tx(svg,0,r.y0+21,r.unit,{class:"ticktext","font-size":7});
+    S("line",{x1:L,x2:W-R,y1:r.y1,y2:r.y1,stroke:C.line,"stroke-width":.7},svg);
+    const full=curvePoints(r.d,[1900,2100],[0,r.max],X,Y);
+    S("path",{d:smoothD(full),fill:"none",stroke:r.color,"stroke-width":1.2,opacity:.18},svg);
+    const reveal=S("path",{d:"",fill:"none",stroke:r.color,"stroke-width":2.2,"stroke-linecap":"round"},svg);
+    const dot=S("circle",{r:3.6,fill:r.color,stroke:C.paper,"stroke-width":1.4},svg);
+    const val=tx(svg,W-R+7,r.y0+13,"",{class:"qlabel","font-size":9.5,fill:r.color,"text-anchor":"start"});
+    // peak marker
+    const peak=r.d.reduce((a,b)=>b[1]>a[1]?b:a);
+    if(peak[0]>2000 && peak[0]<2095){
+      S("circle",{cx:X(peak[0]),cy:Y(peak[1]),r:2.2,fill:C.paper,stroke:r.color,"stroke-width":1.1},svg);
+      tx(svg,X(peak[0])+4,Y(peak[1])-4,"peak",{class:"ticktext","font-size":6.8,fill:r.color});
+    }
+    groups.push({r,X,Y,reveal,dot,val,full});
+  });
+  const cursor=S("line",{y1:T,y2:H-18,stroke:C.amber,"stroke-width":1.2,opacity:.8},svg);
+
+  function setYear(year,animate){
+    cursor.setAttribute("x1",X(year)); cursor.setAttribute("x2",X(year));
+    groups.forEach(g=>{
+      const pts=[];
+      for(let x=1900;x<=year+0.5;x+=2) pts.push([X(x),g.Y(interp(g.r.d,x))]);
+      g.reveal.setAttribute("d",pts.length>1?smoothD(pts):"");
+      const v=interp(g.r.d,year);
+      g.dot.setAttribute("cx",X(year)); g.dot.setAttribute("cy",g.Y(v));
+      g.val.textContent=(g.r.id==="res"?v.toFixed(0)+"%":Math.round(v));
+      g.val.setAttribute("y",g.Y(v)+3);
+    });
+    $("#runYear").textContent="year "+Math.round(year);
+    $("#runSlider").value=Math.round(year);
+  }
+  let drag=false, playing=false, raf=null;
+  function yearFromEvent(e){
+    const rect=svg.getBoundingClientRect();
+    const x=(e.clientX-rect.left)*(W/rect.width);
+    return clamp(1900+(x-L)/(W-R-L)*200,1900,2100);
+  }
+  const overlay=S("rect",{x:L,y:T,width:W-R-L,height:H-20,fill:"transparent",style:"cursor:ew-resize"},svg);
+  overlay.addEventListener("pointerdown",e=>{drag=true;setYear(yearFromEvent(e));});
+  addEventListener("pointerup",()=>drag=false);
+  overlay.addEventListener("pointermove",e=>{if(drag)setYear(yearFromEvent(e));});
+  $("#runSlider").addEventListener("input",e=>{stop();setYear(Number(e.target.value));});
+  function stop(){ playing=false; if(raf)cancelAnimationFrame(raf); $("#playRun").textContent="▶ play 1900–2100"; }
+  $("#playRun").addEventListener("click",()=>{
+    if(playing){ stop(); return; }
+    playing=true; $("#playRun").textContent="❚❚ pause";
+    const t0=performance.now(), start=1900, dur=12000;
+    function step(now){
+      if(!playing) return;
+      const p=clamp((now-t0)/dur,0,1);
+      setYear(start+p*200);
+      if(p<1) raf=requestAnimationFrame(step); else { playing=false; $("#playRun").textContent="▶ replay"; }
+    }
+    raf=requestAnimationFrame(step);
+  });
+  setYear(2025);
+}
+
+/* ============================== 7 · SCENARIOS ============================== */
+const scData={
+  BAU:{name:"Business as usual",color:C.red,
+    desc:"Historic relationships continue. Growth overshoots the resource base; collapse is driven by non-renewable resource depletion.",
+    outcome:"Peak, then decline · mid-21st century",
+    pop:[[1900,42],[1950,66],[1970,78],[2000,100],[2020,112],[2040,114],[2060,98],[2080,75],[2100,63]],
+    ind:[[1900,20],[1950,40],[1970,65],[2000,100],[2015,112],[2030,108],[2050,82],[2070,55],[2100,40]],
+    pol:[[1900,3],[1950,12],[1970,33],[2000,100],[2020,150],[2040,190],[2060,200],[2080,175],[2100,150]]},
+  BAU2:{name:"Business as usual 2",color:C.amber,
+    desc:"Twice the initial resources, plus recycling. Collapse is postponed — and caused by pollution instead of scarcity.",
+    outcome:"Later peak · pollution-driven decline",
+    pop:[[1900,42],[1950,66],[1970,78],[2000,100],[2020,114],[2040,119],[2060,120],[2080,105],[2100,84]],
+    ind:[[1900,20],[1950,40],[1970,65],[2000,100],[2020,118],[2040,125],[2060,110],[2080,82],[2100,62]],
+    pol:[[1900,3],[1950,12],[1970,33],[2000,100],[2020,158],[2040,205],[2060,232],[2080,210],[2100,160]]},
+  CT:{name:"Comprehensive technology",color:C.blue,
+    desc:"Aggressive pollution control, higher land yields and resource efficiency — far above historical rates. Growth stalls and declines, but there is no full collapse.",
+    outcome:"Plateau · moderate decline late in the century",
+    pop:[[1900,42],[1950,66],[1970,78],[2000,100],[2020,112],[2040,117],[2060,115],[2080,108],[2100,100]],
+    ind:[[1900,20],[1950,40],[1970,65],[2000,100],[2020,118],[2040,126],[2060,122],[2080,112],[2100,102]],
+    pol:[[1900,3],[1950,12],[1970,33],[2000,100],[2020,112],[2040,120],[2060,118],[2080,112],[2100,105]]},
+  SW:{name:"Stabilised world",color:C.teal,
+    desc:"Technology plus changed values and policies: smaller families, caps on output, more investment in services and health. The only scenario in which decline is avoided.",
+    outcome:"Stable population and welfare · no decline",
+    pop:[[1900,42],[1950,66],[1970,78],[2000,100],[2020,108],[2040,107],[2060,105],[2080,104],[2100,103]],
+    ind:[[1900,20],[1950,40],[1970,65],[2000,100],[2020,108],[2040,107],[2060,101],[2080,98],[2100,96]],
+    pol:[[1900,3],[1950,12],[1970,33],[2000,100],[2020,95],[2040,88],[2060,85],[2080,84],[2100,83]]}
+};
+function initScenarios(){
+  const host=$("#scChart");
+  const W=520,H=270,L=38,R=58,T=14,B=30;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const X=x=>lerp(L,W-R,(x-1900)/200);
+  const Y=y=>lerp(H-B,T,clamp(y,0,230)/230);
+  drawAxes(svg,{x0:L,x1:W-R,y0:T,y1:H-B,yd:[0,230],yTicks:[0,50,100,150,200],
+    xd:[1900,2100],xTicks:[1900,1950,2000,2050,2100],xTitle:"year",yTitle:"index · 2000 = 100"});
+  const ghost=S("g",{},svg), live=S("g",{},svg);
+  const ghostLines=["pop","ind","pol"].map(k=>S("path",{fill:"none",stroke:C.line2,"stroke-width":1,opacity:.5,"stroke-dasharray":"3 3"},ghost));
+  const liveLines=["pop","ind","pol"].map(()=>S("path",{fill:"none","stroke-width":2.2,"stroke-linecap":"round"},live));
+  const endLabels=["pop","ind","pol"].map(()=>tx(live,0,0,"",{class:"ticktext","font-size":7.5}));
+  function draw(sc){
+    const d=scData[sc];
+    const cols={pop:C.red,ind:C.blue,pol:C.grey};
+    const names={pop:"population",ind:"industry",pol:"pollution"};
+    ["pop","ind","pol"].forEach((k,i)=>{
+      const gpts=curvePoints(scData.BAU[k],[1900,2100],[0,230],X,Y);
+      ghostLines[i].setAttribute("d",sc==="BAU"?"":smoothD(gpts));
+      const pts=curvePoints(d[k],[1900,2100],[0,230],X,Y);
+      liveLines[i].setAttribute("d",smoothD(pts));
+      liveLines[i].setAttribute("stroke",cols[k]);
+      const last=d[k][d[k].length-1];
+      endLabels[i].setAttribute("x",X(2100)+2); endLabels[i].setAttribute("y",Y(last[1])+3);
+      endLabels[i].setAttribute("fill",cols[k]); endLabels[i].textContent=sc==="BAU"||i>0?names[k]:"";
+      endLabels[i].setAttribute("opacity",i===0?1:0);
+    });
+    $("#scName").textContent=d.name;
+    $("#scName").style.color=d.color;
+    $("#scDesc").textContent=d.desc;
+    $("#scOutcome").innerHTML=`<span style="color:${d.color};font-weight:600">${d.outcome}</span>`;
+    $("#scCard").style.borderLeft="3px solid "+d.color;
+    $$("#scenarioBtns .btn").forEach(b=>b.classList.toggle("active",b.dataset.sc===sc));
+    $$(".sc-card").forEach(c=>{
+      c.style.background=c.dataset.sc===sc?"rgba(255,253,247,.95)":"rgba(255,253,247,.45)";
+      c.style.boxShadow=c.dataset.sc===sc?"0 4px 18px rgba(20,32,28,.08)":"none";
+    });
+  }
+  $$("#scenarioBtns .btn").forEach(b=>b.addEventListener("click",()=>draw(b.dataset.sc)));
+  $$(".sc-card").forEach(c=>c.addEventListener("click",()=>draw(c.dataset.sc)));
+  onHover(svg,"<b>Conditional futures</b><br>Each curve is what follows <i>if</i> its assumptions hold. The dashed line is BAU, for comparison. Values are normalised to 2000 = 100 and stylised from the published scenarios.");
+  draw("BAU");
+}
+
+/* ============================== 8 · VALIDATION PIPELINE ============================== */
+const pipe=[
+  {n:"Narrative",d:"Start with a story about how the world works: capital produces output; output consumes resources and emits pollution; pollution harms health and land with a delay.",
+   note:"The narrative is the model's argument. Every equation must be traceable to it."},
+  {n:"Equations",d:"Translate the story into stocks, flows, feedbacks and delays. World3 has 100+ equations; the 1972 version has 29 state variables and 38 parameters.",
+   note:"This is where assumptions become explicit — and therefore criticisable."},
+  {n:"Simulation",d:"Integrate the equations from 1900 to 2100 under a scenario. Change one assumption at a time to see what the system does.",
+   note:"The output is a behaviour mode, not a point forecast."},
+  {n:"Comparison",d:"Align model variables with empirical proxies: population, food per capita, industrial output, resources, pollution, welfare, footprint. Measure NRMSD and the value/rate-of-change gap.",
+   note:"Uncertainty bands: 20% for value, 50% for rate of change, 20% for NRMSD."},
+  {n:"Recalibration",d:"Adjust parameters, rerun, and compare again. Keep the changes that improve fit; test whether the behaviour mode survives.",
+   note:"Recalibration is not proof. It is a disciplined conversation between structure and data."}
+];
+function initPipeline(){
+  const host=$("#pipeChart");
+  const W=620,H=176;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const nw=106, gap=15, y=26, h=54;
+  const xs=pipe.map((_,i)=>6+i*(nw+gap));
+  // feedback loop
+  const fx=xs[4]+nw/2, tx0=xs[1]+nw/2;
+  S("path",{d:`M${fx},${y+h} C${fx},${y+h+42} ${tx0},${y+h+42} ${tx0},${y+h+4}`,fill:"none",stroke:C.amber,"stroke-width":1.2,"stroke-dasharray":"4 3"},svg);
+  S("path",{d:`M${tx0-4},${y+h+12} L${tx0},${y+h+3} L${tx0+4},${y+h+12}`,fill:"none",stroke:C.amber,"stroke-width":1.2},svg);
+  tx(svg,(fx+tx0)/2,y+h+54,"revise structure or parameters",{class:"ticktext","font-size":8,fill:C.amber,"text-anchor":"middle"});
+  const nodes=[];
+  pipe.forEach((p,i)=>{
+    const g=S("g",{class:"flow"},svg);
+    S("rect",{x:xs[i],y,width:nw,height:h,rx:3,fill:C.paper2,stroke:C.line2,"stroke-width":1.1},g);
+    S("rect",{x:xs[i],y,width:nw,height:3,rx:1.5,fill:i===0?C.amber:C.teal},g);
+    tx(g,xs[i]+9,y+18,String(i+1).padStart(2,"0"),{class:"ticktext","font-size":7,fill:C.muted});
+    tx(g,xs[i]+9,y+34,p.n,{class:"qlabel","font-size":9.5,fill:C.ink});
+    tx(g,xs[i]+9,y+46,i===4?"fit → revise":"step",{class:"ticktext","font-size":6.8});
+    if(i<pipe.length-1){
+      S("line",{x1:xs[i]+nw+1,x2:xs[i+1]-5,y1:y+h/2,y2:y+h/2,stroke:C.line2,"stroke-width":1.2},svg);
+      S("path",{d:`M${xs[i+1]-9},${y+h/2-4} L${xs[i+1]-3},${y+h/2} L${xs[i+1]-9},${y+h/2+4}`,fill:"none",stroke:C.line2,"stroke-width":1.2},svg);
+    }
+    g.addEventListener("click",()=>pick(i));
+    nodes.push(g);
+  });
+  function pick(i){
+    nodes.forEach((g,j)=>g.classList.toggle("on",j===i));
+    $("#pdName").textContent=(i+1)+" · "+pipe[i].n;
+    $("#pdText").innerHTML=pipe[i].d+" <span style='color:var(--muted)'>"+pipe[i].note+"</span>";
+  }
+  pick(0);
+}
+</script>
+<script>
+/* ============================== 9 · TURNER ============================== */
+const turner=[
+  {n:"Population",v:2,c:C.teal,note:"Close in total, but only because birth and death rates offset each other."},
+  {n:"Food per capita",v:5,c:C.olive,note:"Within about 5% by 2000; the standard run tracks the observed slowing of growth."},
+  {n:"Industrial output / capita",v:15,c:C.blue,note:"Within about 15% by 2000 — close, but not exact."},
+  {n:"Persistent pollution",v:15,c:C.grey,note:"About 15% at 2000; the most uncertain variable, and the one Turner flagged."},
+  {n:"Non-renewable resources",v:5,c:C.purple,note:"Close to the lower bound of observed reserves remaining."},
+  {n:"Services per capita",v:5,c:C.amber,note:"Electricity and literacy proxies track the standard run more closely than CT or SW."}
+];
+function initTurner(){
+  const host=$("#turnerBars");
+  const W=470,H=170,L=112,R=30,T=10,B=18;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const X=v=>lerp(L,W-R,v/20);
+  [0,5,10,15,20].forEach(v=>{
+    S("line",{x1:X(v),x2:X(v),y1:T,y2:H-B,class:"gridline"},svg);
+    tx(svg,X(v),H-6,v+"%",{class:"ticktext","text-anchor":"middle","font-size":7.5});
+  });
+  const rh=(H-B-T)/turner.length;
+  turner.forEach((d,i)=>{
+    const y=T+i*rh+4;
+    tx(svg,0,y+8,d.n,{class:"ticktext","font-size":8,fill:C.ink});
+    S("rect",{x:L,y:y+1,width:Math.max(2,X(d.v)-L),height:rh-7,rx:1.5,fill:d.c,opacity:.82},svg);
+    tx(svg,X(d.v)+5,y+8,"~"+d.v+"%",{class:"ticktext","font-size":8,fill:d.c,"font-weight":600});
+    const hit=S("rect",{x:0,y:y-2,width:W,height:rh-2,fill:"transparent",style:"cursor:default"},svg);
+    onHover(hit,`<b>${d.n}</b><br>Approximate model–data gap at 2000: ${d.v}%<br><span style="opacity:.8">${d.note}</span>`);
+  });
+  tx(svg,W-R,H-6,"gap at 2000",{class:"ticktext","text-anchor":"end","font-size":7.2});
+}
+
+/* ============================== 10 · HERRINGTON ============================== */
+const herr=[
+  {n:"BAU",v:4,c:C.red,note:"The original standard run: resource-driven collapse."},
+  {n:"BAU2",v:6,c:C.amber,note:"Twice the resources, recycling; pollution-driven collapse."},
+  {n:"CT",v:7,c:C.blue,note:"Comprehensive technology: growth stalls, then moderate decline."},
+  {n:"SW",v:3,c:C.teal,note:"Stabilised world: the only scenario without decline — and the least aligned with data."},
+  {n:"none",v:2,c:C.grey,note:"No scenario clearly closest; scenarios had not diverged enough to decide."}
+];
+function initHerrington(){
+  const host=$("#herrChart");
+  const W=500,H=182,L=34,R=16,T=26,B=34;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const X=i=>L+28+i*88, Y=v=>lerp(H-B,T,v/8);
+  [0,2,4,6,8].forEach(v=>{
+    S("line",{x1:L,x2:W-R,y1:Y(v),y2:Y(v),class:"gridline"},svg);
+    tx(svg,L-5,Y(v)+3,v,{class:"ticktext","text-anchor":"end","font-size":7.5});
+  });
+  S("line",{x1:L,x2:W-R,y1:H-B,y2:H-B,class:"axisline"},svg);
+  herr.forEach((d,i)=>{
+    const x=X(i), y=Y(d.v);
+    const g=S("g",{},svg);
+    S("rect",{x:x-20,y,width:40,height:H-B-y,fill:d.c,opacity:.83,rx:1.5},g);
+    tx(g,x,y-6,d.v,{class:"qlabel","text-anchor":"middle","font-size":11,fill:d.c});
+    tx(g,x,H-B+14,d.n,{class:"qlabel","text-anchor":"middle","font-size":8.5,fill:d.n==="none"?C.muted:C.ink});
+    tx(g,x,H-B+24,i===2?"closest":"",{class:"ticktext","text-anchor":"middle","font-size":6.5,fill:C.blue});
+    onHover(g,`<b>${d.n}</b> · ${d.v} closest-fit counts<br>${d.note}`);
+  });
+  // bracket
+  S("path",{d:`M${X(1)-22},${T-6} L${X(1)-22},${T-10} L${X(2)+22},${T-10} L${X(2)+22},${T-6}`,fill:"none",stroke:C.blue,"stroke-width":1},svg);
+  tx(svg,(X(1)+X(2))/2,T-14,"closest fit",{class:"ticktext","text-anchor":"middle","font-size":7.5,fill:C.blue});
+}
+
+/* ============================== 11 · PASQUALINO ============================== */
+const pasq=[
+  {n:"Land yield factor",min:1,max:1.8,base:1,vals:[1.63,1.67],fmt:v=>v.toFixed(2),note:"Higher agricultural productivity than the 1972 assumption."},
+  {n:"Arable-land erosion factor",min:0,max:1,base:0,vals:[0.92,0.94],fmt:v=>v.toFixed(2),note:"Land management much closer to the ‘good practice’ curve."},
+  {n:"Processing loss",min:0.1,max:0.4,base:0.1,vals:[0.35],fmt:v=>(v*100).toFixed(0)+"%",note:"Food wasted or diverted along the supply chain; forced to 35%."}
+];
+function initPasq(){
+  const host=$("#pasqChart");
+  const W=510,H=226,L=14,R=14;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  pasq.forEach((p,i)=>{
+    const y=26+i*70, x0=24, x1=W-24;
+    const X=v=>lerp(x0,x1,(v-p.min)/(p.max-p.min));
+    tx(svg,0,y-6,p.n,{class:"qlabel","font-size":9,fill:C.ink});
+    tx(svg,x0,y+22,p.fmt(p.base)+" (1972)",{class:"ticktext","font-size":7.2,"text-anchor":"start"});
+    tx(svg,x1,y+22,"stronger effect →",{class:"ticktext","font-size":7.2,"text-anchor":"end",fill:C.teal});
+    S("line",{x1:x0,x2:x1,y1:y+8,y2:y+8,stroke:C.line,"stroke-width":5,"stroke-linecap":"round"},svg);
+    S("line",{x1:X(p.base),x2:X(p.base),y1:y+2,y2:y+14,stroke:C.ink,"stroke-width":1.4},svg);
+    S("circle",{cx:X(p.base),cy:y+8,r:3.5,fill:C.ink},svg);
+    p.vals.forEach((v,j)=>{
+      const col=j===0?C.teal:C.amber;
+      S("circle",{cx:X(v),cy:y+8,r:5.2,fill:C.paper,stroke:col,"stroke-width":2},svg);
+    });
+    const lx=p.vals.length===1?X(p.vals[0]):(X(p.vals[0])+X(p.vals[1]))/2;
+    const ltext=p.vals.length===1?p.fmt(p.vals[0]):p.vals.map(p.fmt).join("–");
+    tx(svg,lx,y-3,ltext,{class:"ticktext","text-anchor":"middle","font-size":7.8,fill:p.vals.length===1?C.amber:C.teal,"font-weight":600});
+    if(i<2){
+      S("line",{x1:X(p.base),x2:X(p.vals[0]),y1:y+8,y2:y+8,stroke:C.teal,"stroke-width":1,opacity:.4},svg);
+    }
+    const hit=S("rect",{x:0,y:y-14,width:W,height:46,fill:"transparent"},svg);
+    onHover(hit,`<b>${p.n}</b><br>1972 assumption: ${p.fmt(p.base)} → calibrated: ${p.vals.map(p.fmt).join(" / ")}<br>${p.note}`);
+  });
+  tx(svg,L,H-6,"1972 assumption (black) → calibrated values (teal / amber)",{class:"ticktext","font-size":7.2});
+}
+
+/* ============================== 12 · NEBEL ============================== */
+const nebel=[
+  {p:"pptd",full:"Persistent pollution transmission delay",v:481.9,from:"20 y",to:"116.4 y",clip:true},
+  {p:"uildt",full:"Urban–industrial land development time",v:-94.7,from:"10 y",to:"0.53 y"},
+  {p:"hsid",full:"Health services impact delay",v:91.2,from:"20 y",to:"38.2 y"},
+  {p:"fspd",full:"Food shortage perception delay",v:-69.4,from:"2 y",to:"0.61 y"},
+  {p:"lpd",full:"Lifetime perception delay",v:69.2,from:"20 y",to:"33.8 y"},
+  {p:"ppgf1",full:"Persistent pollution generation factor 1",v:53.4,from:"1.00",to:"1.53"},
+  {p:"lfpf",full:"Labour force participation fraction",v:36.2,from:"0.75",to:"1.02"},
+  {p:"alln",full:"Average life of land, normal",v:35.1,from:"1000 y",to:"1351 y"},
+  {p:"palt",full:"Potentially arable land total",v:31.8,from:"3.20 bn ha",to:"4.22 bn ha"},
+  {p:"nri",full:"Non-renewable resources, initial",v:30.2,from:"1.00e12",to:"1.30e12"},
+  {p:"imti",full:"Industrial material toxicity index",v:10.6,from:"10.0",to:"11.1"},
+  {p:"imef",full:"Industrial material emission factor",v:10.2,from:"0.10",to:"0.11"},
+  {p:"alic1",full:"Average lifetime of industrial capital",v:8.9,from:"14 y",to:"15.24 y"}
+];
+function initNebel(){
+  const host=$("#nebelChart");
+  const W=515,H=264,L=62,R=16,T=18,B=22;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const X=v=>lerp(L,W-R,(v+100)/200);
+  [ -100,-50,0,50,100 ].forEach(v=>{
+    S("line",{x1:X(v),x2:X(v),y1:T,y2:H-B,class: v===0?"axisline":"gridline"},svg);
+    tx(svg,X(v),H-7,v+"%",{class:"ticktext","text-anchor":"middle","font-size":7.2});
+  });
+  const rh=(H-B-T)/nebel.length;
+  nebel.forEach((d,i)=>{
+    const y=T+i*rh+3, x0=X(0), x1=X(clamp(d.v,-100,100));
+    tx(svg,0,y+7,d.p,{class:"mono","font-size":7.8,fill:d.p==="alic1"?C.amber:C.ink});
+    const g=S("g",{},svg);
+    S("rect",{x:Math.min(x0,x1),y:y+1,width:Math.max(1.5,Math.abs(x1-x0)),height:rh-5,rx:1,fill:d.clip?C.amber:(d.p==="alic1"?C.amber:(d.v<0?C.amber:C.teal)),opacity:d.p==="alic1"?.9:.8},g);
+    if(d.clip){
+      tx(g,W-R-4,y+8,"+482% · off scale",{class:"ticktext","font-size":7.2,"text-anchor":"end",fill:C.paper,"font-weight":600});
+    }else{
+      const lx=d.v<0?x1-4:x1+4;
+      tx(g,lx,y+8,(d.v>0?"+":"")+d.v.toFixed(1)+"%",{class:"ticktext","font-size":7.2,"text-anchor":d.v<0?"end":"start",fill:d.v<0?C.amber:C.teal,"font-weight":600});
+    }
+    onHover(g,`<b>${d.p}</b> · ${d.full}<br>${d.from} → ${d.to} <b>(${d.v>0?"+":""}${d.v.toFixed(1)}%)</b>${d.clip?"<br><i>Bar clipped at +100%; true shift is +482%.</i>":""}${d.p==="alic1"?"<br><i>Corrected default: 14 y, not 2 y.</i>":""}`);
+  });
+}
+
+/* ============================== 13 · TORNADO ============================== */
+const tornado=[
+  {p:"FIOAC",full:"Fraction of industrial output allocated to consumption",v:37.48,y:2092,c:C.blue},
+  {p:"ICOR",full:"Industrial capital-output ratio",v:30.76,y:2092,c:C.blue},
+  {p:"ALIC",full:"Average lifetime of industrial capital",v:17.65,y:2092,c:C.blue},
+  {p:"RLT",full:"Reproductive lifetime",v:12.98,y:2024,c:C.red},
+  {p:"DCFSN",full:"Desired completed family size, normal",v:10.93,y:2024,c:C.red},
+  {p:"LEN",full:"Life expectancy, normal",v:10.25,y:2024,c:C.red},
+  {p:"LFH",full:"Land fraction harvested",v:7.90,y:2092,c:C.olive},
+  {p:"LYF",full:"Land yield factor",v:7.50,y:2092,c:C.olive},
+  {p:"ILF",full:"Inherent land fertility",v:7.42,y:2092,c:C.olive},
+  {p:"NRUF",full:"Non-renewable resource use factor",v:4.13,y:2092,c:C.purple}
+];
+function initTornado(){
+  const host=$("#tornadoChart");
+  const W=500,H=232,L=112,R=34,T=14,B=20;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const X=v=>lerp(L,W-R,v/40);
+  [0,10,20,30,40].forEach(v=>{
+    S("line",{x1:X(v),x2:X(v),y1:T,y2:H-B,class:v===0?"axisline":"gridline"},svg);
+    tx(svg,X(v),H-6,v,{class:"ticktext","text-anchor":"middle","font-size":7.4});
+  });
+  S("line",{x1:X(10),x2:X(10),y1:T,y2:H-B,stroke:C.amber,"stroke-width":1,"stroke-dasharray":"3 3"},svg);
+  const rh=(H-B-T)/tornado.length;
+  tornado.forEach((d,i)=>{
+    const y=T+i*rh+3;
+    tx(svg,0,y+8,d.p,{class:"mono","font-size":8,fill:C.ink});
+    const g=S("g",{},svg);
+    S("rect",{x:L,y:y+1,width:X(d.v)-L,height:rh-5,rx:1,fill:d.c,opacity:.8},g);
+    tx(g,X(d.v)+4,y+8,d.v.toFixed(1),{class:"ticktext","font-size":7.4,fill:d.c,"font-weight":600});
+    onHover(g,`<b>${d.p}</b> · ${d.full}<br>Maximum |inflation factor|: ${d.v.toFixed(2)} (${d.y})<br><span style="opacity:.8">A 1% change in this parameter produces up to a ${d.v.toFixed(0)}% change in the capital state variable.</span>`);
+  });
+}
+
+/* ============================== 14 · EDEN3 NETWORK ============================== */
+const edenNodes={
+  pop:{x:252,y:56,r:27,c:C.red,label:"Population",sub:"Hu"},
+  serv:{x:110,y:40,r:19,c:C.amber,label:"Services",sub:"Gs"},
+  food:{x:112,y:126,r:23,c:C.olive,label:"Food",sub:"Fd"},
+  land:{x:48,y:216,r:22,c:C.olive,label:"Arable land",sub:"Ld"},
+  pol:{x:194,y:256,r:24,c:C.grey,label:"Pollution",sub:"Po"},
+  io:{x:372,y:116,r:29,c:C.blue,label:"Industrial output",sub:"Io"},
+  cap:{x:452,y:204,r:24,c:C.blue,label:"Capital",sub:"Ic"},
+  res:{x:338,y:296,r:24,c:C.purple,label:"Resources",sub:"Rs"},
+  tech:{x:464,y:56,r:20,c:C.teal,label:"Technology",sub:"T"}
+};
+const edenEdges=[
+  ["pop","io"],["pop","food"],["food","land"],["io","cap"],["cap","res"],
+  ["io","pol"],["pol","pop"],["pol","land"],["serv","pop"],
+  ["tech","pol",1],["tech","land",1],["tech","res",1]
+];
+function initEden(){
+  const host=$("#edenNet");
+  const W=520,H=338;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart"},host);
+  const defs=S("defs",{},svg);
+  const mk=S("marker",{id:"edenArrow",viewBox:"0 0 8 8",refX:6.4,refY:4,markerWidth:4.2,markerHeight:4.2,orient:"auto-start-reverse"},defs);
+  S("path",{d:"M0,0 L8,4 L0,8 z",fill:C.muted},mk);
+  const edgeEls=[];
+  edenEdges.forEach(([a,b,dash])=>{
+    const A=edenNodes[a],B=edenNodes[b];
+    const dx=B.x-A.x,dy=B.y-A.y,len=Math.hypot(dx,dy)||1;
+    const ux=dx/len,uy=dy/len;
+    const x1=A.x+ux*(A.r+3),y1=A.y+uy*(A.r+3);
+    const x2=B.x-ux*(B.r+6),y2=B.y-uy*(B.r+6);
+    const g=S("g",{},svg);
+    S("line",{x1,y1,x2,y2,stroke:dash?C.teal+"88":C.line2,"stroke-width":dash?1.1:1.4,
+      "stroke-dasharray":dash?"4 3":"0","marker-end":"url(#edenArrow)"},g);
+    edgeEls.push({a,b,g});
+  });
+  const nodeEls={};
+  Object.entries(edenNodes).forEach(([id,n])=>{
+    const g=S("g",{style:"cursor:pointer"},svg);
+    S("circle",{cx:n.x,cy:n.y,r:n.r+5,fill:n.c,opacity:.12},g);
+    S("circle",{cx:n.x,cy:n.y,r:n.r,fill:C.paper2,stroke:n.c,"stroke-width":1.6},g);
+    tx(g,n.x,n.y-1,n.label,{class:"qlabel","text-anchor":"middle","font-size":n.r>24?8.8:8,fill:C.ink});
+    tx(g,n.x,n.y+10,n.sub,{class:"ticktext","text-anchor":"middle","font-size":7.2,fill:n.c});
+    g.addEventListener("click",()=>pick(id));
+    onHover(g,`<b>${n.label}</b><br>${n.sub} · click to highlight its causal neighbours.`);
+    nodeEls[id]=g;
+  });
+  function pick(id){
+    const neighbours=new Set([id]);
+    edgeEls.forEach(e=>{
+      const on=e.a===id||e.b===id;
+      e.g.setAttribute("opacity",on?1:.25);
+      if(e.a===id) neighbours.add(e.b);
+      if(e.b===id) neighbours.add(e.a);
+    });
+    Object.entries(nodeEls).forEach(([k,g])=>{
+      g.setAttribute("opacity",neighbours.has(k)?1:.55);
+    });
+    $("#edenPick").textContent=id+" → "+[...neighbours].filter(x=>x!==id).join(", ");
+  }
+  pick("pop");
+}
+
+/* ============================== SPEAKER NOTES ============================== */
+const NOTES=[
+`<b>Welcome.</b> This is an explanatory seminar, not a verdict on whether the Limits to Growth “was right”. We will open the model, see how it works, follow what it says, and then examine fifty years of attempts to test it against the world. The deck moves in four movements: build, run, test, rethink. The seven papers cover the model's mathematics, its calibration, its empirical comparisons and a recent qualitative reconstruction. I will use the interactive charts along the way — please interrupt with questions.`,
+`<b>The central distinction is prediction versus scenario.</b> World3 was built to explore the behaviour of a coupled system, not to name a date. The 1972 authors said this repeatedly, and the quote on the right is the one to keep in mind. The 1972 book contained twelve scenarios; the model is a laboratory in which you vary assumptions and watch the consequences. The timeline shows the model's life: the technical report in 1974, the 1992 and 2004 updates, then a series of independent data comparisons and recalibrations.`,
+`<b>System dynamics in three objects.</b> A stock accumulates; a flow changes it; feedback connects the stock back to the flow. Reinforcing loops produce exponential growth. Balancing loops produce limits. The crucial ingredient is delay: the signal that should turn the tap arrives after the water has already reached the rim. That single idea explains why a system can overshoot a limit it would have respected if it had reacted in time. Ask the audience for examples of long lags in their own fields.`,
+`<b>Five sectors, tightly coupled.</b> Population depends on food, health and pollution. Capital produces output but also extraction and emissions. Agriculture depends on land, capital and pollution. Resources are finite. Pollution accumulates and damages health and land. The model is deliberately aggregated — one world, no regions — which makes the coupling visible but hides distribution. The 1972 version has 29 state variables and 38 parameters; World3-03 adds technology, welfare and footprint. No sector can collapse alone: the failure propagates.`,
+`<b>This is a toy model, not World3.</b> It isolates one mechanism: growth, a capacity that declines, and a response lag. With a short lag, population tracks capacity smoothly. With a long lag, it overshoots, the overshoot erodes capacity, and the system collapses. Push the slider from 2 to 60 years and watch the peak rise and the end-state fall. The numbers are illustrative; the mechanism is the point. Where are our own response lags — in climate, in soil, in institutions?`,
+`<b>The standard run.</b> Business as usual holds the relationships of 1900–1970 constant. The sequence matters: per-capita food and industrial output turn first, population later, because demographic momentum keeps births above deaths for decades. Resources decline throughout; the apparent abundance is an artefact of the scale. Drag the year cursor and watch each panel. The point is not the exact peak date. The point is the shape: growth, a plateau, then a decline that is already locked in before it becomes visible.`,
+`<b>Scenarios are conditional statements.</b> BAU depletes resources. BAU2 doubles the resource base and adds recycling; collapse is postponed but now caused by pollution. CT applies extraordinary technological progress; growth stalls and declines, but does not fully collapse. SW adds changed values and policies — smaller families, output caps, more services — and is the only scenario without decline. The lesson is the plural in “limits”: solving one constraint moves the binding constraint somewhere else. Technology changes timing and cause; goals change direction.`,
+`<b>How do you test a model that spans two centuries?</b> You do not ask whether it predicted a particular year. You ask whether its structure reproduces the direction, the turning points and the rates of change. Two rulers are used: NRMSD across the series, and the value plus rate-of-change gap at the latest observation. Both come with uncertainty bands because global data are noisy. Recalibration closes the loop: adjust parameters, rerun, compare, and check whether the behaviour mode survives. That last check is what separates calibration from curve-fitting.`,
+`<b>Turner 2008 is the first careful data test.</b> He compared 1970–2000 observations with three 1972 scenarios and found the data consistent with BAU, not with CT or SW. This also demolished the myth that LtG predicted collapse by 2000 — the turning points are in the 21st century. The population fit is partly a coincidence: birth and death rates compensate. The most uncertain variable is pollution, which Turner singled out. That uncertainty is the bridge to the next slide.`,
+`<b>Herrington 2021 updates the test with World3-03 and data to 2019.</b> She adds welfare and the ecological footprint. The closest scenarios are now CT and BAU2, not BAU; SW is the least aligned. Both closest scenarios imply a halt in welfare, food and industrial growth within about a decade. Only BAU2 depicts a full collapse, driven by pollution. The methodological differences from Turner are real, but the conclusion is not a U-turn: the world is not on the sustainable path. The window is closing.`,
+`<b>Pasqualino et al. calibrate the recent past.</b> Using 1995–2012 data and Scenario 2 as the base, they find that the world has invested more in pollution abatement, agricultural productivity and services than the 1972 assumptions implied. Land yields and erosion management are markedly better. But — and this is essential — they do not run the model forward. A calibration tells you what parameter values fit the growth phase; it does not tell you that collapse has been avoided. Read the fine print.`,
+`<b>Nebel et al. 2024 is the most recent full recalibration.</b> They optimise 35 parameters against eight data series in PyWorld3-03. The fit improves by 18%, but the model still produces overshoot and collapse. Peaks are higher and later; the pollution peak shifts about fifty years; collapse remains resource-driven. The corrigendum is a nice teaching moment: the original table gave alic1 a default of 2 years instead of 14, exaggerating its relative change. After correction, the largest shifts are pollution transmission delay and urban–industrial land development time. Always check the correction.`,
+`<b>This is the methodological heart of the deck.</b> In 1976, Vermeulen and de Jongh computed sensitivity functions for all 29 states and 38 parameters. A 1% change in a parameter could produce a 30% change in a capital variable; a 10% change in three parameters could avert the collapse. That looks devastating for the model. But later work replicated the perturbations and found that the behaviour mode — overshoot and decline — survives. Both claims are true: trajectories are sensitive, the structural story is robust. So do not trust the date; do trust the risk.`,
+`<b>Eden3 is a different kind of model.</b> It keeps only 13 binary variables and 40 qualitative rules, yet reproduces all eleven LtG scenarios as paths in a state-transition graph. Population and industrial output are the most connected nodes. The resource threshold decides whether the system falls into the terminal collapse basin. Technology can restore a sector temporarily, but it does not repeal the limit. This is a powerful teaching tool because it makes the causal structure visible without pretending to forecast.`,
+`<b>What survives, and what does not.</b> The enduring lessons are about plural limits, delays, exponential exhaustion, the difference between timing and direction, and the value of making assumptions explicit. The critiques are equally important: aggregation hides distribution; there is no price system or endogenous innovation; the data are proxies; the post-collapse equations are not credible; and normative assumptions are baked into the structure. Use World3 as a diagnostic, not an oracle.`,
+`<b>Synthesis.</b> The model's deepest message is not a date. It is that the future is a choice space bounded by limits, and that the quality of our response depends on how early and how honestly we measure. Four levers follow: slow the throughput, shorten the delays, protect the buffers, and invest in response capacity. The discussion questions are deliberately uncomfortable: which limit is binding now, where are our longest lags, and who decides what “enough” means? End here and open the floor.`,
+`<b>Sources and method.</b> The seven papers are listed with DOIs. The standard-run and scenario curves are stylised reconstructions of published behaviour, not digitised data; the overshoot simulator is a toy model; the empirical numbers — NRMSD, closest-fit counts, parameter shifts, sensitivities — come from the papers. No copyrighted figures are reproduced. If you want to explore further, PyWorld3-03 is open source, and Earth4All is the 50th-anniversary regional successor.`
+];
+
+/* ============================== REGISTRY & BOOT ============================== */
+const INITS={
+  0:initCover,1:initTimeline,2:initLoops,3:initSectors,4:initOvershoot,
+  5:initRun,6:initScenarios,7:initPipeline,8:initTurner,9:initHerrington,
+  10:initPasq,11:initNebel,12:initTornado,13:initEden
+};
+
+function boot(){
+  buildChrome();
+  buildProgress();
+  buildOverview();
+  fitStage();
+  let start=0;
+  try{
+    const q=new URLSearchParams(location.search).get("slide");
+    const h=location.hash.match(/s=(\d+)/);
+    if(q) start=parseInt(q,10)-1;
+    else if(h) start=parseInt(h[1],10)-1;
+  }catch(e){}
+  start=clamp(start||0,0,total-1);
+  cur=start;
+  slides.forEach((s,i)=>s.classList.toggle("active",i===start));
+  initSlide(start);
+  $("#count").textContent=`${start+1} / ${total}`;
+  $$("#progress button").forEach((b,i)=>{
+    b.classList.toggle("on",i===start);
+    b.classList.toggle("done",i<start);
+  });
+  try{ history.replaceState(null,"","#s="+(start+1)); }catch(e){}
+  if(notesOpen) renderNotes();
+}
+boot();
+</script>
+
+
+
+
+</body>
+</html>
